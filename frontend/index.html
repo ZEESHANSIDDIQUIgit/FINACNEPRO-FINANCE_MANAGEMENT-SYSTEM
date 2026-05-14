@@ -3,148 +3,354 @@
 <head>
     <meta charset="UTF-8">
     <title>Finance Manager Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+    <!-- CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        /* CSS stays the same as your previous version */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #e5e5e5; }
-        .sidebar { width: 250px; height: 100vh; position: fixed; background: #0f0f0f; border-right: 1px solid rgba(255,215,0,0.15); padding: 25px; }
-        .sidebar h2 { font-size: 20px; color: gold; margin-bottom: 25px; }
-        .sidebar a { display: block; color: #b5b5b5; text-decoration: none; margin: 12px 0; font-size: 14px; cursor: pointer; }
-        .sidebar a:hover { color: gold; }
-        .main { margin-left: 270px; padding: 30px; }
-        .page-title { font-size: 30px; font-weight: 700; color: gold; }
-        .sub-title { font-size: 13px; color: #aaa; margin-bottom: 25px; }
-        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .card { background: linear-gradient(145deg, #111, #0b0b0b); border: 1px solid rgba(255,215,0,0.15); padding: 20px; border-radius: 16px; }
-        .card h3 { font-size: 13px; color: #aaa; }
-        .card p { font-size: 24px; font-weight: 700; margin-top: 10px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            color: #e5e5e5;
+        }
+
+        /* --- New Style for Currency --- */
+        .currency-label {
+            font-family: 'JetBrains Mono', monospace; /* More professional look for currency */
+            font-weight: 600;
+            font-size: 0.85em; /* Slightly smaller than the numbers */
+            margin-right: 4px;
+            text-transform: uppercase;
+        }
+
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            background: #0f0f0f;
+            border-right: 1px solid rgba(255,215,0,0.15);
+            padding: 25px;
+        }
+
+        .sidebar h2 {
+            font-size: 20px;
+            color: gold;
+            margin-bottom: 25px;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #b5b5b5;
+            text-decoration: none;
+            margin: 18px 0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .sidebar a:hover {
+            color: gold;
+        }
+
+        .main {
+            margin-left: 270px;
+            padding: 30px;
+        }
+
+        .page-title {
+            font-size: 30px;
+            font-weight: 700;
+            color: gold;
+        }
+
+        .sub-title {
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 25px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: linear-gradient(145deg, #111, #0b0b0b);
+            border: 1px solid rgba(255,215,0,0.15);
+            padding: 20px;
+            border-radius: 16px;
+        }
+
+        .card h3 {
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .card p {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
         .income { color: #22c55e; }
         .expense { color: #ef4444; }
         .balance { color: gold; }
-        .section-title { margin: 25px 0 10px; font-size: 16px; font-weight: 600; color: gold; }
-        .form-box { background: #111; border: 1px solid rgba(255,215,0,0.15); padding: 18px; border-radius: 16px; margin-bottom: 20px; }
-        input, select { padding: 12px; margin: 5px; border-radius: 10px; border: 1px solid #333; background: #0a0a0a; color: white; outline: none; }
+
+        .section-title {
+            margin: 25px 0 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: gold;
+        }
+
+        .form-box {
+            background: #111;
+            border: 1px solid rgba(255,215,0,0.15);
+            padding: 18px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            padding: 12px;
+            margin: 5px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            background: #0a0a0a;
+            color: white;
+            outline: none;
+        }
+
         input:focus { border-color: gold; }
-        button { padding: 12px 16px; background: gold; color: black; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; }
+
+        button {
+            padding: 12px 16px;
+            background: gold;
+            color: black;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
         button:hover { background: #d4af37; }
-        table { width: 100%; border-collapse: collapse; background: #111; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,215,0,0.15); }
-        th { text-align: left; padding: 14px; font-size: 12px; color: gold; background: #0f0f0f; }
-        td { padding: 14px; border-top: 1px solid #1f1f1f; font-size: 13px; }
-        .progress-container { background: #222; height: 8px; border-radius: 4px; margin-top: 12px; overflow: hidden; }
-        .progress-fill { height: 100%; transition: width 0.4s ease; }
-        .logout-btn { color: #ef4444 !important; margin-top: 50px !important; font-weight: bold; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #111;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,215,0,0.15);
+        }
+
+        th {
+            text-align: left;
+            padding: 14px;
+            font-size: 12px;
+            color: gold;
+            background: #0f0f0f;
+        }
+
+        td {
+            padding: 14px;
+            border-top: 1px solid #1f1f1f;
+            font-size: 13px;
+        }
+
+        .progress-container {
+            background: #222;
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.4s ease;
+        }
+
+        .logout-btn {
+            color: #ef4444 !important;
+            margin-top: 50px !important;
+            font-weight: bold;
+        }
+
+        .analytics-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .chart-card {
+            flex: 1;
+            min-width: 300px;
+            background: #111;
+            border: 1px solid rgba(255,215,0,0.15);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .chart-card h3 {
+            color: gold;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="sidebar">
-    <h2>💰 FinancePro</h2>
-    <p id="user-display" style="font-size: 12px; color: #888; margin-bottom: 20px;">Logged in as: ...</p>
-    <a href="#">📊 Overview</a>
-    <a href="#">💸 Transactions</a>
-    <a href="#">📁 Reports</a>
-    <a onclick="logout()" class="logout-btn">🚪 Logout</a>
-</div>
-
-<div class="main">
-    <div class="page-title">Financial Overview</div>
-    <div class="sub-title">Real-time data analytics for your personal budget</div>
-
-    <div class="cards">
-        <div class="card"><h3>Total Income</h3><p class="income" id="income">$0.00</p></div>
-        <div class="card"><h3>Total Expenses</h3><p class="expense" id="expense">$0.00</p></div>
-        <div class="card"><h3>Balance</h3><p class="balance" id="balance">$0.00</p></div>
+    <div class="sidebar">
+        <h2>💰 FinancePro</h2>
+        <p id="user-display" style="font-size: 12px; color: #888; margin-bottom: 20px;">Logged in as: ...</p>
+        <a href="#">📊 Overview</a>
+        <a href="#">💸 Transactions</a>
+        <a href="#">📁 Reports</a>
+        <a onclick="logout()" class="logout-btn">🚪 Logout</a>
     </div>
 
-    <!-- BUDGET SECTION -->
-    <div class="section-title">🎯 Set Monthly Budget</div>
-    <div class="form-box">
-        <input id="budget-category" placeholder="Category (e.g., Food)">
-        <input id="budget-limit" type="number" placeholder="Monthly Limit">
-        <button onclick="addBudget()">Set Budget</button>
+    <div class="main">
+        <div class="page-title">Financial Overview</div>
+        <div class="sub-title">Real-time data analytics for your personal budget</div>
+
+        <div class="cards">
+            <div class="card">
+                <h3>Total Income</h3>
+                <p class="income" id="income"><span class="currency-label">RS.</span> 0.00</p>
+            </div>
+            <div class="card">
+                <h3>Total Expenses</h3>
+                <p class="expense" id="expense"><span class="currency-label">RS.</span> 0.00</p>
+            </div>
+            <div class="card">
+                <h3>Balance</h3>
+                <p class="balance" id="balance"><span class="currency-label">RS.</span> 0.00</p>
+            </div>
+        </div>
+
+        <div class="section-title">🎯 Set Monthly Budget</div>
+        <div class="form-box">
+            <input id="budget-category" placeholder="Category (e.g., Food)">
+            <input id="budget-limit" type="number" placeholder="Monthly Limit">
+            <button onclick="addBudget()">Set Budget</button>
+        </div>
+
+        <div class="section-title">📊 Budget Status</div>
+        <div id="budget-list" class="cards"></div>
+
+        <div class="section-title">➕ Add Transaction</div>
+        <div class="form-box">
+            <select id="type">
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+            <input id="amount" type="number" placeholder="Amount">
+            <input id="category" placeholder="Category (e.g., Food)">
+            <input id="description" placeholder="Description">
+            <button onclick="addTransaction()">Add Transaction</button>
+        </div>
+
+        <div class="section-title">📈 Financial Analytics</div>
+        <div class="analytics-container">
+            <div class="chart-card">
+                <h3>Monthly Income vs Expense</h3>
+                <canvas id="monthlyChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Expense Categories</h3>
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <div class="section-title">📜 Transaction History</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="table"></tbody>
+        </table>
     </div>
 
-    <div class="section-title">📊 Budget Status</div>
-    <div id="budget-list" class="cards">
-        <!-- Budget bars will appear here -->
-    </div>
+   <script>
+const API = "http://localhost:3001";
+// Capitalized currency label wrapped in span for styling
+const CURR_HTML = `<span class="currency-label">RS.</span>`; 
 
-    <!-- TRANSACTION SECTION -->
-    <div class="section-title">➕ Add Transaction</div>
-    <div class="form-box">
-        <select id="type">
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
-        </select>
-        <input id="amount" type="number" placeholder="Amount">
-        <input id="category" placeholder="Category (e.g., Food)">
-        <input id="description" placeholder="Description">
-        <button onclick="addTransaction()">Add Transaction</button>
-    </div>
+const USER_ID = localStorage.getItem("currentUserId");
+const USER_NAME = localStorage.getItem("userName");
 
-    <div class="section-title">📜 Transaction History</div>
-    <table>
-        <thead>
-            <tr><th>Type</th><th>Amount</th><th>Category</th><th>Description</th><th>Action</th></tr>
-        </thead>
-        <tbody id="table"></tbody>
-    </table>
-</div>
+if (!USER_ID) {
+    window.location.href = "login.html";
+} else {
+    document.getElementById("user-display").innerText = `Logged in as: ${USER_NAME}`;
+}
 
-<script>
-    const API = "http://localhost:3001";
-    // Get logged-in user info from localStorage
-    const USER_ID = localStorage.getItem("currentUserId");
-    const USER_NAME = localStorage.getItem("userName");
+async function loadAll() {
+    await loadTransactions();
+    await loadBudgets();
+    await loadCharts();
+}
 
-    // Redirect to login if no user is found
-    if (!USER_ID) {
-        window.location.href = "login.html";
-    } else {
-        document.getElementById("user-display").innerText = `Logged in as: ${USER_NAME}`;
-    }
+async function loadTransactions() {
+    const res = await fetch(`${API}/transactions/${USER_ID}`);
+    const transactions = await res.json();
 
-    // --- LOADING DATA ---
+    let income = 0;
+    let expense = 0;
 
-    async function loadAll() {
-        await loadTransactions();
-        await loadBudgets();
-    }
-
-    async function loadTransactions() {
-        const res = await fetch(`${API}/transactions/${USER_ID}`);
-        const transactions = await res.json();
-
-        let income = 0;
-        let expense = 0;
-
-        document.getElementById("table").innerHTML = transactions.map(t => {
+    document.getElementById("table").innerHTML =
+        transactions.map(t => {
             const amt = Number(t.amount);
             if (t.type === "income") income += amt;
             else expense += amt;
 
             return `
                 <tr>
-                    <td style="color: ${t.type === 'income' ? '#22c55e' : '#ef4444'}">${t.type.toUpperCase()}</td>
-                    <td>$${amt.toFixed(2)}</td>
+                    <td style="color:${t.type === 'income' ? '#22c55e' : '#ef4444'}">
+                        ${t.type.toUpperCase()}
+                    </td>
+                    <td>${CURR_HTML} ${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td>${t.category || "-"}</td>
-                    <td>${t.description}</td>
-                    <td><button onclick="del(${t.id})" style="background: #ef4444; color: white; padding: 5px 10px;">Delete</button></td>
-                </tr>`;
+                    <td>${t.description || "-"}</td>
+                    <td>
+                        <button onclick="del(${t.id})"
+                        style="background:#ef4444;color:white;padding:5px 10px;">
+                        Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
         }).join("");
 
-        document.getElementById("income").innerText = `$${income.toFixed(2)}`;
-        document.getElementById("expense").innerText = `$${expense.toFixed(2)}`;
-        document.getElementById("balance").innerText = `$${(income - expense).toFixed(2)}`;
-    }
+    document.getElementById("income").innerHTML = `${CURR_HTML} ${income.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    document.getElementById("expense").innerHTML = `${CURR_HTML} ${expense.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    document.getElementById("balance").innerHTML = `${CURR_HTML} ${(income - expense).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+}
 
-    async function loadBudgets() {
-        // Matches the route: /budget-status/:userId
-        const res = await fetch(`${API}/budget-status/${USER_ID}`);
-        const budgets = await res.json();
+async function loadBudgets() {
+    const res = await fetch(`${API}/budget-status/${USER_ID}`);
+    const budgets = await res.json();
 
-        document.getElementById("budget-list").innerHTML = budgets.map(b => {
+    document.getElementById("budget-list").innerHTML =
+        budgets.map(b => {
             const spent = Number(b.actual_spent);
             const limit = Number(b.limit_amount);
             const percent = Math.min((spent / limit) * 100, 100);
@@ -153,74 +359,119 @@
             return `
                 <div class="card">
                     <h3>${b.category.toUpperCase()}</h3>
-                    <p>$${spent.toFixed(0)} / $${limit.toFixed(0)}</p>
+                    <p>${CURR_HTML} ${spent.toFixed(0)} / ${CURR_HTML} ${limit.toFixed(0)}</p>
                     <div class="progress-container">
-                        <div class="progress-fill" style="width: ${percent}%; background: ${barColor}"></div>
+                        <div class="progress-fill"
+                        style="width:${percent}%;background:${barColor};"></div>
                     </div>
-                    <small style="display:block; margin-top:5px; color:#aaa">
-                        ${spent >= limit ? '⚠️ Limit Reached' : '$' + (limit - spent).toFixed(0) + ' remaining'}
+                    <small style="display:block;margin-top:5px;color:#aaa;">
+                        ${spent >= limit
+                            ? '⚠️ Limit Reached'
+                            : CURR_HTML + ' ' + (limit - spent).toFixed(0) + ' remaining'}
                     </small>
-                </div>`;
+                </div>
+            `;
         }).join("");
-    }
+}
 
-    // --- ACTIONS ---
+// Chart Logic...
+let monthlyChartInstance;
+let categoryChartInstance;
 
-    async function addTransaction() {
-        const type = document.getElementById("type").value;
-        const amount = document.getElementById("amount").value;
-        const category = document.getElementById("category").value;
-        const description = document.getElementById("description").value;
+async function loadCharts() {
+    const monthlyRes = await fetch(`${API}/api/analytics/monthly/${USER_ID}`);
+    const monthlyData = await monthlyRes.json();
+    const categoryRes = await fetch(`${API}/api/analytics/categories/${USER_ID}`);
+    const categoryData = await categoryRes.json();
 
-        if (!amount || !category) return alert("Please enter amount and category");
+    if (monthlyChartInstance) monthlyChartInstance.destroy();
+    if (categoryChartInstance) categoryChartInstance.destroy();
 
-        await fetch(`${API}/transactions`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: USER_ID, type, amount, category, description })
-        });
-
-        // Clear fields and reload
-        document.getElementById("amount").value = "";
-        document.getElementById("category").value = "";
-        document.getElementById("description").value = "";
-        loadAll();
-    }
-
-    async function addBudget() {
-        const category = document.getElementById("budget-category").value;
-        const limit_amount = document.getElementById("budget-limit").value;
-
-        if (!category || !limit_amount) return alert("Please enter category and limit");
-
-        const response = await fetch(`${API}/budgets`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: USER_ID, category, limit_amount })
-        });
-
-        if (response.ok) {
-            document.getElementById("budget-category").value = "";
-            document.getElementById("budget-limit").value = "";
-            loadBudgets();
+    monthlyChartInstance = new Chart(document.getElementById("monthlyChart"), {
+            type: "bar",
+            data: {
+                labels: monthlyData.map(r => r.month_year),
+                datasets: [
+                    { label: "Income", data: monthlyData.map(r => r.total_income), backgroundColor: "#22c55e" },
+                    { label: "Expense", data: monthlyData.map(r => r.total_expense), backgroundColor: "#ef4444" }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: "white" } } },
+                scales: {
+                    x: { ticks: { color: "white" } },
+                    y: { ticks: { color: "white" } }
+                }
+            }
         }
-    }
+    );
 
-    async function del(id) {
-        if (confirm("Delete this transaction?")) {
-            await fetch(`${API}/transactions/${id}`, { method: "DELETE" });
-            loadAll();
+    categoryChartInstance = new Chart(document.getElementById("categoryChart"), {
+            type: "doughnut",
+            data: {
+                labels: categoryData.map(r => r.category),
+                datasets: [{
+                    data: categoryData.map(r => r.total_amount),
+                    backgroundColor: ["#FFD700","#22c55e","#ef4444","#3b82f6","#a855f7","#f97316"]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: "white" } } }
+            }
         }
+    );
+}
+
+async function addTransaction() {
+    const type = document.getElementById("type").value;
+    const amount = document.getElementById("amount").value;
+    const category = document.getElementById("category").value;
+    const description = document.getElementById("description").value;
+    if (!amount || !category) return alert("Please enter amount and category");
+
+    await fetch(`${API}/transactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: USER_ID, type, amount, category, description })
+    });
+
+    document.getElementById("amount").value = "";
+    document.getElementById("category").value = "";
+    document.getElementById("description").value = "";
+    await loadAll();
+}
+
+async function addBudget() {
+    const category = document.getElementById("budget-category").value;
+    const limit_amount = document.getElementById("budget-limit").value;
+    if (!category || !limit_amount) return alert("Please enter category and limit");
+
+    await fetch(`${API}/budgets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: USER_ID, category, limit_amount })
+    });
+
+    document.getElementById("budget-category").value = "";
+    document.getElementById("budget-limit").value = "";
+    await loadBudgets();
+}
+
+async function del(id) {
+    if (confirm("Delete this transaction?")) {
+        await fetch(`${API}/transactions/${id}`, { method: "DELETE" });
+        await loadAll();
     }
+}
 
-    function logout() {
-        localStorage.clear();
-        window.location.href = "login.html";
-    }
+function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+}
 
-    // Run on startup
-    loadAll();
-
+loadAll();
 </script>
 </body>
 </html>

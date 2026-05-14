@@ -97,3 +97,34 @@ GROUP BY b.user_id, b.category, b.limit_amount;
 -- ========================================================
 -- Sample users from image_b10213.png have been removed.
 -- You can now create fresh accounts using your signup.html page.
+-- ========================================================
+-- 8. MONTHLY COMPARISON VIEW
+-- ========================================================
+-- This view compares Total Income vs Total Expense by Month
+CREATE OR REPLACE VIEW view_monthly_comparison AS
+SELECT 
+    user_id,
+    DATE_FORMAT(created_at, '%M %Y') AS month_year,
+    SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) AS total_income,
+    SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) AS total_expense,
+    -- SQL Concept: Arithmetic in Queries
+    (SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) - 
+     SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END)) AS monthly_savings
+FROM transactions
+GROUP BY user_id, YEAR(created_at), MONTH(created_at)
+ORDER BY YEAR(created_at) DESC, MONTH(created_at) DESC;
+
+-- ========================================================
+-- 9. CATEGORY DISTRIBUTION VIEW
+-- ========================================================
+-- This powers the Doughnut/Pie chart for expenses
+CREATE OR REPLACE VIEW view_category_distribution AS
+SELECT 
+    user_id,
+    category,
+    SUM(amount) AS total_amount,
+    -- SQL Concept: Calculating percentage
+    ROUND((SUM(amount) * 100 / (SELECT SUM(amount) FROM transactions WHERE type = 'expense')), 2) AS percentage
+FROM transactions
+WHERE type = 'expense'
+GROUP BY user_id, category;
