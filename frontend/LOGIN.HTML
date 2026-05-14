@@ -1,4 +1,4 @@
-<!DOCTYPE html>               
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -92,6 +92,23 @@
         button:hover {
             background: #d4af37;
         }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 25px;
+            color: #999;
+            font-size: 16px;
+        }
+
+        .signup-link a {
+            color: gold;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -103,6 +120,10 @@
         <input type="email" id="email" placeholder="Enter Email">
         <input type="password" id="password" placeholder="Enter Password">
         <button onclick="login()">Login</button>
+
+        <div class="signup-link">
+            Don't have an account? <a href="signup.html">Sign Up</a>
+        </div>
     </div>
  
     <script>
@@ -116,22 +137,40 @@
             }
  
             try {
-                const response = await fetch(`http://localhost:3001/api/login?email=${email}`);
-                const user = await response.json();
+                // Changed from GET to POST to securely send password data
+                const response = await fetch("http://localhost:3001/api/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
  
-                if (user.id) {
-                    localStorage.setItem("currentUserId", user.id);
-                    localStorage.setItem("userName", user.username);
+                if (response.ok && result.id) {
+                    // Storing session data
+                    localStorage.setItem("currentUserId", result.id);
+                    localStorage.setItem("userName", result.username);
+                    
                     alert("Login Successful");
                     window.location.href = "index.html";
                 } else {
-                    alert("User not found");
+                    // Display specific error message from server (e.g., "User not found" or "Invalid credentials")
+                    alert(result.message || "Login failed. Please check your credentials.");
                 }
             } catch (error) {
-                console.log(error);
-                alert("Cannot connect to server.\n\nMake sure node server.js is running.");
+                console.error("Login error:", error);
+                alert("Cannot connect to server.\n\nMake sure your Node.js server (server.js) is running on port 3001.");
             }
         }
+
+        // Allow pressing "Enter" key to login
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
     </script>
 </body>
 </html>

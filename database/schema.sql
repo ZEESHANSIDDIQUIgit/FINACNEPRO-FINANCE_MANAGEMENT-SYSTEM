@@ -1,11 +1,14 @@
--- ===================== DATABASE =====================
+-- ========================================================
+-- 1. DATABASE INITIALIZATION
+-- ========================================================
 CREATE DATABASE IF NOT EXISTS finance_db;
 USE finance_db;
 
--- ===================== 1. USERS TABLE =====================
-DROP TABLE IF EXISTS users;
-
-CREATE TABLE users (
+-- ========================================================
+-- 2. USERS TABLE
+-- ========================================================
+-- This table stores credentials from your signup.html
+CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
@@ -13,9 +16,10 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- ===================== 2. TRANSACTIONS TABLE =====================
+-- ========================================================
+-- 3. TRANSACTIONS TABLE
+-- ========================================================
 DROP TABLE IF EXISTS transactions;
-
 CREATE TABLE transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -31,9 +35,10 @@ CREATE TABLE transactions (
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ===================== 3. BUDGETS TABLE =====================
+-- ========================================================
+-- 4. BUDGETS TABLE
+-- ========================================================
 DROP TABLE IF EXISTS budgets;
-
 CREATE TABLE budgets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -46,49 +51,49 @@ CREATE TABLE budgets (
         REFERENCES users(id)
         ON DELETE CASCADE,
 
+    -- Ensures a user can't have two budgets for the same category
     UNIQUE KEY unique_user_category (user_id, category)
 ) ENGINE=InnoDB;
 
--- ===================== 4. INDEXES =====================
+-- ========================================================
+-- 5. PERFORMANCE INDEXES
+-- ========================================================
 CREATE INDEX idx_transaction_user ON transactions(user_id);
 CREATE INDEX idx_budget_user ON budgets(user_id);
 
--- ===================== 5. SAMPLE USERS =====================
-INSERT INTO users (username, email, password_hash)
-VALUES
-('user1', 'test@example.com', 'pass123'),
-('user2', 'user2@example.com', 'pass456')
-ON DUPLICATE KEY UPDATE email=email;
-
--- ===================== 6. SAMPLE BUDGETS =====================
-INSERT INTO budgets (user_id, category, limit_amount)
-VALUES
-(1, 'Food', 500.00),
-(1, 'Rent', 1200.00);
-
--- ===================== 7. VIEW (BUDGET REPORT) =====================
+-- ========================================================
+-- 6. BUDGET REPORT VIEW
+-- ========================================================
+-- This view powers the "Budget Status" bars in your index.html
 DROP VIEW IF EXISTS view_budget_report;
 
 CREATE VIEW view_budget_report AS
-SELECT
+SELECT 
     b.user_id,
     b.category,
     b.limit_amount,
-
+    
+    -- Summing expenses for the specific category and user
     COALESCE(SUM(
-        CASE WHEN t.type = 'expense'
+        CASE WHEN t.type = 'expense' 
         THEN t.amount ELSE 0 END
     ), 0) AS actual_spent,
 
-    (b.limit_amount -
+    -- Calculating what is left
+    (b.limit_amount - 
     COALESCE(SUM(
-        CASE WHEN t.type = 'expense'
+        CASE WHEN t.type = 'expense' 
         THEN t.amount ELSE 0 END
     ), 0)) AS remaining_budget
 
 FROM budgets b
-LEFT JOIN transactions t
-    ON b.user_id = t.user_id
+LEFT JOIN transactions t 
+    ON b.user_id = t.user_id 
     AND LOWER(TRIM(b.category)) = LOWER(TRIM(t.category))
-
 GROUP BY b.user_id, b.category, b.limit_amount;
+
+-- ========================================================
+-- 7. CLEAN SLATE NOTE
+-- ========================================================
+-- Sample users from image_b10213.png have been removed.
+-- You can now create fresh accounts using your signup.html page.

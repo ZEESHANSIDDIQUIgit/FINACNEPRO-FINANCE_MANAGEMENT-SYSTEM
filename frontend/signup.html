@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinancePro - Sign Up</title>
+    <style>
+        /* Reusing your sleek dark theme styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #121212; color: white; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { width: 100%; max-width: 500px; background: #1b1b1b; padding: 50px; border-radius: 28px; border: 1px solid #2a2a2a; box-shadow: 0 0 50px rgba(255, 215, 0, 0.08); }
+        .logo { text-align: center; font-size: 50px; margin-bottom: 10px; }
+        h2 { text-align: center; margin-bottom: 10px; color: gold; font-size: 32px; }
+        input { width: 100%; padding: 18px; margin-bottom: 15px; border: none; border-radius: 12px; background: #2a2a2a; color: white; font-size: 16px; outline: none; }
+        button { width: 100%; padding: 18px; border: none; border-radius: 12px; background: gold; color: black; font-weight: bold; cursor: pointer; font-size: 18px; transition: 0.3s; }
+        button:hover { background: #d4af37; }
+        .link { text-align: center; margin-top: 20px; color: #999; font-size: 14px; }
+        .link a { color: gold; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">💰</div>
+        <h2>Create Account</h2>
+        <input type="text" id="username" placeholder="Choose Username">
+        <input type="email" id="email" placeholder="Enter Email">
+        <input type="password" id="password" placeholder="Create Password">
+        <button onclick="signup()">Sign Up</button>
+        <div class="link">Already have an account? <a href="login.html">Login</a></div>
+    </div>
+
+    <script>
+        async function signup() {
+            const username = document.getElementById("username").value;
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            if (!username || !email || !password) return alert("Please fill all fields");
+
+            try {
+                const response = await fetch("http://localhost:3001/api/signup", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert("Account created successfully! Please login.");
+                    window.location.href = "login.html";
+                } else {
+                    alert(data.message || "Error during signup");
+                }
+            } catch (error) {
+                alert("Cannot connect to server.");
+            }
+        }
+    </script>
+</body>
+</html>
