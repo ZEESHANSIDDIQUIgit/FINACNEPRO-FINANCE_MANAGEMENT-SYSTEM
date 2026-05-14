@@ -5,31 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinancePro - Sign Up</title>
     <style>
-        /* Reusing your sleek dark theme styles */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #121212; color: white; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { width: 100%; max-width: 500px; background: #1b1b1b; padding: 50px; border-radius: 28px; border: 1px solid #2a2a2a; box-shadow: 0 0 50px rgba(255, 215, 0, 0.08); }
-        .logo { text-align: center; font-size: 50px; margin-bottom: 10px; }
-        h2 { text-align: center; margin-bottom: 10px; color: gold; font-size: 32px; }
-        input { width: 100%; padding: 18px; margin-bottom: 15px; border: none; border-radius: 12px; background: #2a2a2a; color: white; font-size: 16px; outline: none; }
-        button { width: 100%; padding: 18px; border: none; border-radius: 12px; background: gold; color: black; font-weight: bold; cursor: pointer; font-size: 18px; transition: 0.3s; }
+        
+        body { 
+            background: #121212; 
+            color: white; 
+            font-family: Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            padding: 20px;
+        }
+
+        /* Increased max-width and padding to match Login card */
+        .login-card { 
+            width: 100%; 
+            max-width: 680px; 
+            background: #1b1b1b; 
+            padding: 75px 70px; 
+            border-radius: 28px; 
+            border: 1px solid #2a2a2a; 
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.08); 
+        }
+
+        .logo { 
+            text-align: center; 
+            font-size: 64px; 
+            margin-bottom: 18px; 
+        }
+
+        h2 { 
+            text-align: center; 
+            margin-bottom: 12px; 
+            color: gold; 
+            font-size: 40px; 
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #999;
+            margin-bottom: 50px;
+            font-size: 18px;
+        }
+
+        .password-container { 
+            position: relative; 
+            width: 100%; 
+        }
+
+        /* Standardized input sizes */
+        input { 
+            width: 100%; 
+            padding: 22px; 
+            margin-bottom: 22px; 
+            border: none; 
+            border-radius: 14px; 
+            background: #2a2a2a; 
+            color: white; 
+            font-size: 18px; 
+            outline: none; 
+            transition: 0.3s;
+        }
+
+        input:focus { 
+            border: 1px solid gold; 
+            background: #222; 
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 20px;
+            top: 25px;
+            cursor: pointer;
+            color: gold;
+            font-size: 14px;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        button { 
+            width: 100%; 
+            padding: 22px; 
+            border: none; 
+            border-radius: 14px; 
+            background: gold; 
+            color: black; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 20px; 
+            transition: 0.3s; 
+            margin-top: 8px;
+        }
+
         button:hover { background: #d4af37; }
-        .link { text-align: center; margin-top: 20px; color: #999; font-size: 14px; }
-        .link a { color: gold; text-decoration: none; }
+
+        .link { 
+            text-align: center; 
+            margin-top: 25px; 
+            color: #999; 
+            font-size: 16px; 
+        }
+
+        .link a { 
+            color: gold; 
+            text-decoration: none; 
+            font-weight: bold;
+        }
+
+        .link a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="login-card">
         <div class="logo">💰</div>
         <h2>Create Account</h2>
-        <input type="text" id="username" placeholder="Choose Username">
-        <input type="email" id="email" placeholder="Enter Email">
-        <input type="password" id="password" placeholder="Create Password">
+        <p class="subtitle">Join FinancePro to start tracking</p>
+        
+        <input type="text" id="username" placeholder="Choose Username" autocomplete="off">
+        <input type="email" id="email" placeholder="Enter Email" autocomplete="off">
+        
+        <div class="password-container">
+            <input type="password" id="password" placeholder="Create Password" autocomplete="new-password">
+            <span class="toggle-password" onclick="togglePassword('password', this)">SHOW</span>
+        </div>
+
         <button onclick="signup()">Sign Up</button>
         <div class="link">Already have an account? <a href="login.html">Login</a></div>
     </div>
 
     <script>
+        function togglePassword(inputId, element) {
+            const passwordInput = document.getElementById(inputId);
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                element.textContent = "HIDE";
+            } else {
+                passwordInput.type = "password";
+                element.textContent = "SHOW";
+            }
+        }
+
         async function signup() {
             const username = document.getElementById("username").value;
             const email = document.getElementById("email").value;
@@ -46,7 +162,7 @@
 
                 const data = await response.json();
                 if (response.ok) {
-                    alert("Account created successfully! Please login.");
+                    alert("Account created successfully!");
                     window.location.href = "login.html";
                 } else {
                     alert(data.message || "Error during signup");

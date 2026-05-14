@@ -5,110 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinancePro - Login</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
- 
-        html, body {
-            height: 100%;
-        }
- 
-        body {
-            background: #121212;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            width: 100vw;
-            padding: 20px;
-        }
- 
-        .login-card {
+        /* ... keeping your existing styles ... */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #121212; color: white; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; padding: 20px; }
+        .login-card { width: 100%; max-width: 680px; background: #1b1b1b; padding: 75px 70px; border-radius: 28px; border: 1px solid #2a2a2a; box-shadow: 0 0 50px rgba(255, 215, 0, 0.08); }
+        .logo { text-align: center; font-size: 64px; margin-bottom: 18px; }
+        h2 { text-align: center; margin-bottom: 12px; color: gold; font-size: 40px; }
+        .subtitle { text-align: center; color: #999; margin-bottom: 50px; font-size: 18px; }
+        
+        /* NEW: Password Container Styles */
+        .password-container {
+            position: relative;
             width: 100%;
-            max-width: 680px;
-            background: #1b1b1b;
-            padding: 75px 70px;
-            border-radius: 28px;
-            border: 1px solid #2a2a2a;
-            box-shadow: 0 0 50px rgba(255, 215, 0, 0.08);
         }
- 
-        .logo {
-            text-align: center;
-            font-size: 64px;
-            margin-bottom: 18px;
-        }
- 
-        h2 {
-            text-align: center;
-            margin-bottom: 12px;
-            color: gold;
-            font-size: 40px;
-        }
- 
-        .subtitle {
-            text-align: center;
-            color: #999;
-            margin-bottom: 50px;
-            font-size: 18px;
-        }
- 
-        input {
-            width: 100%;
-            padding: 22px;
-            margin-bottom: 22px;
-            border: none;
-            border-radius: 14px;
-            background: #2a2a2a;
-            color: white;
-            outline: none;
-            font-size: 18px;
-            transition: 0.3s;
-        }
- 
-        input:focus {
-            border: 1px solid gold;
-            background: #222;
-        }
- 
-        button {
-            width: 100%;
-            padding: 22px;
-            border: none;
-            border-radius: 14px;
-            background: gold;
-            color: black;
-            font-weight: bold;
+
+        input { width: 100%; padding: 22px; margin-bottom: 22px; border: none; border-radius: 14px; background: #2a2a2a; color: white; outline: none; font-size: 18px; transition: 0.3s; }
+        input:focus { border: 1px solid gold; background: #222; }
+
+        /* NEW: Eye Button Styles */
+        .toggle-password {
+            position: absolute;
+            right: 20px;
+            top: 25px; /* Aligned with the large padding of your input */
             cursor: pointer;
-            font-size: 20px;
-            transition: 0.3s;
-            margin-top: 8px;
-        }
- 
-        button:hover {
-            background: #d4af37;
-        }
-
-        .signup-link {
-            text-align: center;
-            margin-top: 25px;
-            color: #999;
-            font-size: 16px;
-        }
-
-        .signup-link a {
             color: gold;
-            text-decoration: none;
+            font-size: 14px;
             font-weight: bold;
+            user-select: none;
         }
 
-        .signup-link a:hover {
-            text-decoration: underline;
-        }
+        button.login-btn { width: 100%; padding: 22px; border: none; border-radius: 14px; background: gold; color: black; font-weight: bold; cursor: pointer; font-size: 20px; transition: 0.3s; margin-top: 8px; }
+        button.login-btn:hover { background: #d4af37; }
+        .signup-link { text-align: center; margin-top: 25px; color: #999; font-size: 16px; }
+        .signup-link a { color: gold; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -117,9 +46,15 @@
         <h2>FinancePro</h2>
         <p class="subtitle">Login to manage your finances</p>
  
-        <input type="email" id="email" placeholder="Enter Email">
-        <input type="password" id="password" placeholder="Enter Password">
-        <button onclick="login()">Login</button>
+        <input type="email" id="email" placeholder="Enter Email" autocomplete="off">
+        
+        <!-- Updated Password Field -->
+        <div class="password-container">
+            <input type="password" id="password" placeholder="Enter Password" autocomplete="current-password">
+            <span class="toggle-password" onclick="togglePassword('password', this)">SHOW</span>
+        </div>
+
+        <button class="login-btn" onclick="login()">Login</button>
 
         <div class="signup-link">
             Don't have an account? <a href="signup.html">Sign Up</a>
@@ -127,50 +62,42 @@
     </div>
  
     <script>
-        async function login() {
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
- 
-            if (!email || !password) {
-                alert("Please fill all fields");
-                return;
-            }
- 
-            try {
-                // Changed from GET to POST to securely send password data
-                const response = await fetch("http://localhost:3001/api/login", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ email, password })
-                });
-
-                const result = await response.json();
- 
-                if (response.ok && result.id) {
-                    // Storing session data
-                    localStorage.setItem("currentUserId", result.id);
-                    localStorage.setItem("userName", result.username);
-                    
-                    alert("Login Successful");
-                    window.location.href = "index.html";
-                } else {
-                    // Display specific error message from server (e.g., "User not found" or "Invalid credentials")
-                    alert(result.message || "Login failed. Please check your credentials.");
-                }
-            } catch (error) {
-                console.error("Login error:", error);
-                alert("Cannot connect to server.\n\nMake sure your Node.js server (server.js) is running on port 3001.");
+        // NEW: Toggle Function
+        function togglePassword(inputId, element) {
+            const passwordInput = document.getElementById(inputId);
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                element.textContent = "HIDE";
+            } else {
+                passwordInput.type = "password";
+                element.textContent = "SHOW";
             }
         }
 
-        // Allow pressing "Enter" key to login
-        document.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                login();
+        async function login() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            if (!email || !password) return alert("Please fill all fields");
+            
+            try {
+                const response = await fetch("http://localhost:3001/api/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+                const result = await response.json();
+                if (response.ok && result.id) {
+                    localStorage.setItem("currentUserId", result.id);
+                    localStorage.setItem("userName", result.username);
+                    alert("Login Successful");
+                    window.location.href = "index.html";
+                } else {
+                    alert(result.message || "Login failed.");
+                }
+            } catch (error) {
+                alert("Cannot connect to server.");
             }
-        });
+        }
     </script>
 </body>
 </html>
