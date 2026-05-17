@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en font-backward-compatibility">
 <head>
     <meta charset="UTF-8">
     <title>Finance Manager Pro</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 
-    <!-- CHART.JS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -22,11 +21,11 @@
             color: #e5e5e5;
         }
 
-        /* --- New Style for Currency --- */
+        /* --- Style for Currency --- */
         .currency-label {
-            font-family: 'JetBrains Mono', monospace; /* More professional look for currency */
+            font-family: 'JetBrains Mono', monospace; 
             font-weight: 600;
-            font-size: 0.85em; /* Slightly smaller than the numbers */
+            font-size: 0.85em; 
             margin-right: 4px;
             text-transform: uppercase;
         }
@@ -66,6 +65,13 @@
             padding: 30px;
         }
 
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
         .page-title {
             font-size: 30px;
             font-weight: 700;
@@ -75,7 +81,36 @@
         .sub-title {
             font-size: 13px;
             color: #aaa;
-            margin-bottom: 25px;
+        }
+
+        .month-selector-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #111;
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,215,0,0.15);
+        }
+
+        .month-selector-box label {
+            font-size: 13px;
+            font-weight: 600;
+            color: gold;
+        }
+
+        #global-month {
+            background: #0a0a0a;
+            color: white;
+            border: 1px solid #333;
+            padding: 8px 12px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        #global-month:focus {
+            border-color: gold;
         }
 
         .cards {
@@ -89,6 +124,7 @@
             border: 1px solid rgba(255,215,0,0.15);
             padding: 20px;
             border-radius: 16px;
+            position: relative;
         }
 
         .card h3 {
@@ -207,6 +243,28 @@
             color: gold;
             margin-bottom: 15px;
         }
+
+        .card-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .inner-reset-btn {
+            background: transparent;
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .inner-reset-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
     </style>
 </head>
 
@@ -222,8 +280,16 @@
     </div>
 
     <div class="main">
-        <div class="page-title">Financial Overview</div>
-        <div class="sub-title">Real-time data analytics for your personal budget</div>
+        <div class="header-container">
+            <div>
+                <div class="page-title">Financial Overview</div>
+                <div class="sub-title">Real-time data analytics for your personal budget</div>
+            </div>
+            <div class="month-selector-box">
+                <label for="global-month">Active Month:</label>
+                <input type="month" id="global-month" onchange="loadAll()">
+            </div>
+        </div>
 
         <div class="cards">
             <div class="card">
@@ -275,7 +341,7 @@
         </div>
 
         <div class="section-title">📜 Transaction History</div>
-        <table>
+        <table style="margin-bottom: 30px;">
             <thead>
                 <tr>
                     <th>Type</th>
@@ -287,191 +353,270 @@
             </thead>
             <tbody id="table"></tbody>
         </table>
+
+        <div class="section-title">🏢 Accumulative & Yearly Metrics Summary</div>
+        <div class="cards" style="margin-bottom: 25px;">
+            <div class="card" style="border: 1px solid rgba(34, 197, 94, 0.4);">
+                <h3 id="yearly-income-title">Yearly Income</h3>
+                <p class="income" id="yearly-income"><span class="currency-label">RS.</span> 0.00</p>
+            </div>
+            <div class="card" style="border: 1px solid rgba(239, 68, 68, 0.4);">
+                <h3 id="yearly-expense-title">Yearly Expenses</h3>
+                <p class="expense" id="yearly-expense"><span class="currency-label">RS.</span> 0.00</p>
+            </div>
+            <div class="card" style="background: linear-gradient(145deg, #1e1b4b, #0f172a); border: 1px solid gold;">
+                <h3>👑 Net Worth (All-Time)</h3>
+                <p class="balance" id="net-worth" style="text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);"><span class="currency-label">RS.</span> 0.00</p>
+            </div>
+        </div>
     </div>
 
-   <script>
-const API = "http://localhost:3001";
-// Capitalized currency label wrapped in span for styling
-const CURR_HTML = `<span class="currency-label">RS.</span>`; 
+<script>
+    const API = "http://localhost:3002"; 
+    const CURR_HTML = `<span class="currency-label">RS.</span>`; 
 
-const USER_ID = localStorage.getItem("currentUserId");
-const USER_NAME = localStorage.getItem("userName");
+    const USER_ID = localStorage.getItem("currentUserId");
+    const USER_NAME = localStorage.getItem("userName");
 
-if (!USER_ID) {
-    window.location.href = "login.html";
-} else {
-    document.getElementById("user-display").innerText = `Logged in as: ${USER_NAME}`;
-}
+    if (!USER_ID) {
+        window.location.href = "login.html";
+    } else {
+        document.getElementById("user-display").innerText = `Logged in as: ${USER_NAME}`;
+    }
 
-async function loadAll() {
-    await loadTransactions();
-    await loadBudgets();
-    await loadCharts();
-}
+    function initMonthPicker() {
+        const picker = document.getElementById("global-month");
+        if (!picker.value) {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            picker.value = `${yyyy}-${mm}`; 
+        }
+    }
 
-async function loadTransactions() {
-    const res = await fetch(`${API}/transactions/${USER_ID}`);
-    const transactions = await res.json();
+    async function loadAll() {
+        initMonthPicker();
+        const selectedMonth = document.getElementById("global-month").value; 
+        
+        // FIXED: Shifted summary loop invocation execution to the very top
+        await loadYearlyAndNetWorth(); 
+        await loadTransactions(selectedMonth);
+        await loadBudgets(selectedMonth);
+        await loadCharts(selectedMonth);
+    }
 
-    let income = 0;
-    let expense = 0;
+    async function loadTransactions(month) {
+        const res = await fetch(`${API}/transactions/${USER_ID}?month=${month}`);
+        const transactions = await res.json();
 
-    document.getElementById("table").innerHTML =
-        transactions.map(t => {
-            const amt = Number(t.amount);
-            if (t.type === "income") income += amt;
-            else expense += amt;
+        let income = 0;
+        let expense = 0;
 
-            return `
-                <tr>
-                    <td style="color:${t.type === 'income' ? '#22c55e' : '#ef4444'}">
-                        ${t.type.toUpperCase()}
-                    </td>
-                    <td>${CURR_HTML} ${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td>${t.category || "-"}</td>
-                    <td>${t.description || "-"}</td>
-                    <td>
-                        <button onclick="del(${t.id})"
-                        style="background:#ef4444;color:white;padding:5px 10px;">
-                        Delete
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join("");
+        document.getElementById("table").innerHTML =
+            transactions.map(t => {
+                const amt = Number(t.amount);
+                if (t.type === "income") income += amt;
+                else expense += amt;
 
-    document.getElementById("income").innerHTML = `${CURR_HTML} ${income.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-    document.getElementById("expense").innerHTML = `${CURR_HTML} ${expense.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-    document.getElementById("balance").innerHTML = `${CURR_HTML} ${(income - expense).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-}
+                return `
+                    <tr>
+                        <td style="color:${t.type === 'income' ? '#22c55e' : '#ef4444'}">
+                            ${t.type.toUpperCase()}
+                        </td>
+                        <td>${CURR_HTML} ${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td>${t.category || "-"}</td>
+                        <td>${t.description || "-"}</td>
+                        <td>
+                            <button onclick="del(${t.id})"
+                            style="background:#ef4444;color:white;padding:5px 10px;">
+                            Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
 
-async function loadBudgets() {
-    const res = await fetch(`${API}/budget-status/${USER_ID}`);
-    const budgets = await res.json();
+        document.getElementById("income").innerHTML = `${CURR_HTML} ${income.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        document.getElementById("expense").innerHTML = `${CURR_HTML} ${expense.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        document.getElementById("balance").innerHTML = `${CURR_HTML} ${(income - expense).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    }
 
-    document.getElementById("budget-list").innerHTML =
-        budgets.map(b => {
-            const spent = Number(b.actual_spent);
-            const limit = Number(b.limit_amount);
-            const percent = Math.min((spent / limit) * 100, 100);
-            const barColor = percent > 90 ? "#ef4444" : "gold";
+    async function loadBudgets(month) {
+        const res = await fetch(`${API}/budget-status/${USER_ID}?month=${month}`);
+        const budgets = await res.json();
 
-            return `
-                <div class="card">
-                    <h3>${b.category.toUpperCase()}</h3>
-                    <p>${CURR_HTML} ${spent.toFixed(0)} / ${CURR_HTML} ${limit.toFixed(0)}</p>
-                    <div class="progress-container">
-                        <div class="progress-fill"
-                        style="width:${percent}%;background:${barColor};"></div>
+        document.getElementById("budget-list").innerHTML =
+            budgets.map(b => {
+                const spent = Number(b.actual_spent);
+                const limit = Number(b.limit_amount);
+                const percent = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
+                const barColor = percent > 90 ? "#ef4444" : "gold";
+
+                return `
+                    <div class="card">
+                        <div class="card-header-flex">
+                            <h3>${b.category.toUpperCase()}</h3>
+                            <button onclick="resetSingleBudget('${b.category}')" class="inner-reset-btn">🔄 Reset</button>
+                        </div>
+                        <p>${CURR_HTML} ${spent.toFixed(0)} / ${CURR_HTML} ${limit.toFixed(0)}</p>
+                        <div class="progress-container">
+                            <div class="progress-fill"
+                            style="width:${percent}%;background:${barColor};"></div>
+                        </div>
+                        <small style="display:block;margin-top:5px;color:#aaa;">
+                            ${spent >= limit
+                                ? '⚠️ Limit Reached'
+                                : CURR_HTML + ' ' + (limit - spent).toFixed(0) + ' remaining'}
+                        </small>
                     </div>
-                    <small style="display:block;margin-top:5px;color:#aaa;">
-                        ${spent >= limit
-                            ? '⚠️ Limit Reached'
-                            : CURR_HTML + ' ' + (limit - spent).toFixed(0) + ' remaining'}
-                    </small>
-                </div>
-            `;
-        }).join("");
-}
+                `;
+            }).join("");
+    }
 
-// Chart Logic...
-let monthlyChartInstance;
-let categoryChartInstance;
+    let monthlyChartInstance;
+    let categoryChartInstance;
 
-async function loadCharts() {
-    const monthlyRes = await fetch(`${API}/api/analytics/monthly/${USER_ID}`);
-    const monthlyData = await monthlyRes.json();
-    const categoryRes = await fetch(`${API}/api/analytics/categories/${USER_ID}`);
-    const categoryData = await categoryRes.json();
+    async function loadCharts(month) {
+        const monthlyRes = await fetch(`${API}/api/analytics/monthly/${USER_ID}`);
+        const monthlyData = await monthlyRes.json();
+        
+        const categoryRes = await fetch(`${API}/api/analytics/categories/${USER_ID}?month=${month}`);
+        const categoryData = await categoryRes.json();
 
-    if (monthlyChartInstance) monthlyChartInstance.destroy();
-    if (categoryChartInstance) categoryChartInstance.destroy();
+        if (monthlyChartInstance) monthlyChartInstance.destroy();
+        if (categoryChartInstance) categoryChartInstance.destroy();
 
-    monthlyChartInstance = new Chart(document.getElementById("monthlyChart"), {
-            type: "bar",
-            data: {
-                labels: monthlyData.map(r => r.month_year),
-                datasets: [
-                    { label: "Income", data: monthlyData.map(r => r.total_income), backgroundColor: "#22c55e" },
-                    { label: "Expense", data: monthlyData.map(r => r.total_expense), backgroundColor: "#ef4444" }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { labels: { color: "white" } } },
-                scales: {
-                    x: { ticks: { color: "white" } },
-                    y: { ticks: { color: "white" } }
+        monthlyChartInstance = new Chart(document.getElementById("monthlyChart"), {
+                type: "bar",
+                data: {
+                    labels: monthlyData.map(r => r.month_year),
+                    datasets: [
+                        { label: "Income", data: monthlyData.map(r => r.total_income), backgroundColor: "#22c55e" },
+                        { label: "Expense", data: monthlyData.map(r => r.total_expense), backgroundColor: "#ef4444" }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: "white" } } },
+                    scales: {
+                        x: { ticks: { color: "white" } },
+                        y: { ticks: { color: "white" } }
+                    }
                 }
             }
-        }
-    );
+        );
 
-    categoryChartInstance = new Chart(document.getElementById("categoryChart"), {
-            type: "doughnut",
-            data: {
-                labels: categoryData.map(r => r.category),
-                datasets: [{
-                    data: categoryData.map(r => r.total_amount),
-                    backgroundColor: ["#FFD700","#22c55e","#ef4444","#3b82f6","#a855f7","#f97316"]
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { labels: { color: "white" } } }
+        categoryChartInstance = new Chart(document.getElementById("categoryChart"), {
+                type: "doughnut",
+                data: {
+                    labels: categoryData.map(r => r.category),
+                    datasets: [{
+                        data: categoryData.map(r => r.total_amount),
+                        backgroundColor: ["#FFD700","#22c55e","#ef4444","#3b82f6","#a855f7","#f97316"]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: "white" } } }
+                }
             }
+        );
+    }
+
+    async function loadYearlyAndNetWorth() {
+        const selectedMonth = document.getElementById("global-month").value; 
+        const currentYear = selectedMonth.split("-")[0]; 
+        
+        document.getElementById("yearly-income-title").innerText = `Yearly Income (${currentYear})`;
+        document.getElementById("yearly-expense-title").innerText = `Yearly Expenses (${currentYear})`;
+
+        try {
+            const res = await fetch(`${API}/api/analytics/yearly-summary/${USER_ID}?year=${currentYear}`);
+            const data = await res.json();
+
+            const yearlyInc = Number(data.yearlyIncome);
+            const yearlyExp = Number(data.yearlyExpense);
+            const netWorth = Number(data.netWorth);
+
+            document.getElementById("yearly-income").innerHTML = `${CURR_HTML} ${yearlyInc.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById("yearly-expense").innerHTML = `${CURR_HTML} ${yearlyExp.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById("net-worth").innerHTML = `${CURR_HTML} ${netWorth.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        } catch (err) {
+            console.error("Error retrieving yearly metrics summary data:", err);
         }
-    );
-}
+    }
 
-async function addTransaction() {
-    const type = document.getElementById("type").value;
-    const amount = document.getElementById("amount").value;
-    const category = document.getElementById("category").value;
-    const description = document.getElementById("description").value;
-    if (!amount || !category) return alert("Please enter amount and category");
+    async function addTransaction() {
+        const type = document.getElementById("type").value;
+        const amount = document.getElementById("amount").value;
+        const category = document.getElementById("category").value;
+        const description = document.getElementById("description").value;
+        const selectedMonth = document.getElementById("global-month").value; 
+        
+        if (!amount || !category) return alert("Please enter amount and category");
 
-    await fetch(`${API}/transactions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: USER_ID, type, amount, category, description })
-    });
+        await fetch(`${API}/transactions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: USER_ID, type, amount, category, description, month: selectedMonth })
+        });
 
-    document.getElementById("amount").value = "";
-    document.getElementById("category").value = "";
-    document.getElementById("description").value = "";
-    await loadAll();
-}
-
-async function addBudget() {
-    const category = document.getElementById("budget-category").value;
-    const limit_amount = document.getElementById("budget-limit").value;
-    if (!category || !limit_amount) return alert("Please enter category and limit");
-
-    await fetch(`${API}/budgets`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: USER_ID, category, limit_amount })
-    });
-
-    document.getElementById("budget-category").value = "";
-    document.getElementById("budget-limit").value = "";
-    await loadBudgets();
-}
-
-async function del(id) {
-    if (confirm("Delete this transaction?")) {
-        await fetch(`${API}/transactions/${id}`, { method: "DELETE" });
+        document.getElementById("amount").value = "";
+        document.getElementById("category").value = "";
+        document.getElementById("description").value = "";
         await loadAll();
     }
-}
 
-function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
-}
+    async function addBudget() {
+        const category = document.getElementById("budget-category").value;
+        const limit_amount = document.getElementById("budget-limit").value;
+        const selectedMonth = document.getElementById("global-month").value; 
+        
+        if (!category || !limit_amount) return alert("Please enter category and limit");
 
-loadAll();
+        await fetch(`${API}/budgets`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: USER_ID, category, limit_amount, month: selectedMonth })
+        });
+
+        document.getElementById("budget-category").value = "";
+        document.getElementById("budget-limit").value = "";
+        await loadAll();
+    }
+
+    async function resetSingleBudget(categoryName) {
+        const selectedMonth = document.getElementById("global-month").value;
+        
+        if (confirm(`Clear your ${categoryName.toUpperCase()} budget limit for ${selectedMonth}? Your actual transactions will not be deleted.`)) {
+            try {
+                const res = await fetch(`${API}/api/reset-budget/${USER_ID}?month=${selectedMonth}&category=${encodeURIComponent(categoryName)}`, {
+                    method: "DELETE"
+                });
+                const data = await res.json();
+                
+                alert(data.message);
+                await loadAll(); 
+            } catch (err) {
+                console.error("Error resetting category budget:", err);
+                alert("Something went wrong while resetting budget data.");
+            }
+        }
+    }
+
+    async function del(id) {
+        if (confirm("Delete this transaction?")) {
+            await fetch(`${API}/transactions/${id}`, { method: "DELETE" });
+            await loadAll();
+        }
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = "login.html";
+    }
+
+    loadAll();
 </script>
 </body>
 </html>
