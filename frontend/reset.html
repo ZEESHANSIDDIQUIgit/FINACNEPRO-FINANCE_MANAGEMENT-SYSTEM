@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinancePro | Reset Password</title>
+    <style>
+        :root {
+            --gold: #FFD700;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --text-main: #FFFFFF;
+            --text-dim: #B0B0B0;
+        }
+        body {
+            background: radial-gradient(circle at top right, #1a1f26, #000000);
+            font-family: 'Inter', -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            width: 100%;
+            max-width: 360px;
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(20px);
+            padding: 32px 28px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .logo { font-size: 38px; text-align: center; margin-bottom: 10px; }
+        h2 { text-align: center; color: white; font-size: 22px; margin-bottom: 6px; }
+        .subtitle { text-align: center; color: var(--text-dim); margin-bottom: 22px; font-size: 13px; }
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--input-bg);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+        input:focus { border-color: var(--gold); }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: var(--gold);
+            border: none;
+            border-radius: 12px;
+            color: black;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .footer-link { text-align: center; margin-top: 25px; color: var(--text-dim); font-size: 14px; }
+        .footer-link a { color: var(--gold); text-decoration: none; font-weight: 600; }
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .toast.show { opacity: 1; }
+        .toast.success { border-color: #22c55e; }
+        .toast.error { border-color: #ef4444; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo">🔑</div>
+    <h2>Reset Password</h2>
+    <p class="subtitle" id="target-email">Loading email context...</p>
+
+    <input type="password" id="new-password" placeholder="Enter new password">
+    <button onclick="handleReset()">Update Password</button>
+
+    <div class="footer-link">
+        Back to <a href="LOGIN.HTML">Login</a>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API_URL = "http://localhost:3002";
+    
+    // Extract the email parameter from the URL bar
+    const urlParams = new URLSearchParams(window.location.search);
+    const email = urlParams.get("email");
+
+    if (email) {
+        document.getElementById("target-email").textContent = `Setting new password for: ${email}`;
+    } else {
+        document.getElementById("target-email").textContent = "Error: No email context found.";
+    }
+
+    async function handleReset() {
+        const password = document.getElementById("new-password").value;
+
+        if (!password || password.length < 4) {
+            return showToast("Password must be at least 4 characters long.", "error");
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to update password.");
+            }
+
+            showToast("Password updated successfully!", "success");
+            setTimeout(() => window.location.href = "LOGIN.HTML", 1500);
+
+        } catch (error) {
+            showToast(error.message, "error");
+        }
+    }
+
+    function showToast(msg, type = "success") {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = `toast ${type} show`;
+        setTimeout(() => t.className = "toast", 3000);
+    }
+</script>
+</body>
+</html>

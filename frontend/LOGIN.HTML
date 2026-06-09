@@ -5,99 +5,400 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinancePro - Login</title>
     <style>
-        /* ... keeping your existing styles ... */
+        :root {
+            --gold: #FFD700;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --text-dim: #B0B0B0;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #121212; color: white; font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; padding: 20px; }
-        .login-card { width: 100%; max-width: 680px; background: #1b1b1b; padding: 75px 70px; border-radius: 28px; border: 1px solid #2a2a2a; box-shadow: 0 0 50px rgba(255, 215, 0, 0.08); }
-        .logo { text-align: center; font-size: 64px; margin-bottom: 18px; }
-        h2 { text-align: center; margin-bottom: 12px; color: gold; font-size: 40px; }
-        .subtitle { text-align: center; color: #999; margin-bottom: 50px; font-size: 18px; }
-        
-        /* NEW: Password Container Styles */
-        .password-container {
+
+        body {
+            background: radial-gradient(circle at top right, #1a1f26, #000000);
+            font-family: 'Inter', -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             position: relative;
-            width: 100%;
+            overflow: hidden;
         }
 
-        input { width: 100%; padding: 22px; margin-bottom: 22px; border: none; border-radius: 14px; background: #2a2a2a; color: white; outline: none; font-size: 18px; transition: 0.3s; }
-        input:focus { border: 1px solid gold; background: #222; }
-
-        /* NEW: Eye Button Styles */
-        .toggle-password {
+        body::after {
+            content: "";
             position: absolute;
-            right: 20px;
-            top: 25px; /* Aligned with the large padding of your input */
-            cursor: pointer;
-            color: gold;
-            font-size: 14px;
-            font-weight: bold;
-            user-select: none;
+            inset: 0;
+            background-image:
+                linear-gradient(45deg,  rgba(255,215,0,0.03) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255,215,0,0.03) 25%, transparent 25%);
+            background-size: 60px 60px;
+            z-index: 0;
         }
 
-        button.login-btn { width: 100%; padding: 22px; border: none; border-radius: 14px; background: gold; color: black; font-weight: bold; cursor: pointer; font-size: 20px; transition: 0.3s; margin-top: 8px; }
-        button.login-btn:hover { background: #d4af37; }
-        .signup-link { text-align: center; margin-top: 25px; color: #999; font-size: 16px; }
-        .signup-link a { color: gold; text-decoration: none; font-weight: bold; }
+        .card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            background: rgba(20, 20, 20, 0.75);
+            backdrop-filter: blur(20px);
+            padding: 44px 38px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
+            margin: 20px;
+        }
+
+        .logo { font-size: 48px; text-align: center; margin-bottom: 14px; }
+        h2 { text-align: center; color: white; font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+        .subtitle { text-align: center; color: var(--text-dim); font-size: 14px; margin-bottom: 32px; }
+
+        /* ── Inputs ── */
+        .input-group { position: relative; margin-bottom: 6px; }
+
+        input {
+            width: 100%;
+            padding: 14px 44px 14px 16px;
+            background: var(--input-bg);
+            border: 1.5px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.3s, background 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus { border-color: var(--gold); background: rgba(255,255,255,0.08); }
+        input.valid { border-color: #22c55e !important; }
+        input.invalid { border-color: #ef4444 !important; }
+
+        .input-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 15px;
+            pointer-events: none;
+        }
+
+        /* show/hide password button */
+        .toggle-btn {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            padding: 0;
+            width: auto;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+        .toggle-btn:hover { color: var(--gold); background: none; }
+        .toggle-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        .field-msg {
+            font-size: 11px;
+            min-height: 18px;
+            padding-left: 4px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        .field-msg.err { color: #ef4444; }
+        .field-msg.ok  { color: #22c55e; }
+
+        /* ── Forgot password link ── */
+        .forgot {
+            text-align: right;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+        .forgot a { color: var(--gold); text-decoration: none; opacity: 0.8; cursor: pointer; }
+        .forgot a:hover { opacity: 1; text-decoration: underline; }
+
+        /* ── Submit button ── */
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--gold);
+            border: none;
+            border-radius: 12px;
+            color: black;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .submit-btn:hover:not(:disabled) { opacity: 0.9; }
+        .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        /* loading shimmer on button */
+        .submit-btn.loading::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 1s infinite;
+        }
+        @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+        .footer-link {
+            text-align: center;
+            margin-top: 22px;
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+        .footer-link a { color: var(--gold); text-decoration: none; font-weight: 600; }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            top: 24px; right: 24px;
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            max-width: 300px;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { border-color: #22c55e; }
+        .toast.error   { border-color: #ef4444; }
+
+        /* ── Error banner (wrong credentials) ── */
+        .error-banner {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.35);
+            border-radius: 10px;
+            color: #fca5a5;
+            font-size: 13px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            display: none;
+            text-align: center;
+        }
+        .error-banner.show { display: block; }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <div class="logo">💰</div>
-        <h2>FinancePro</h2>
-        <p class="subtitle">Login to manage your finances</p>
- 
-        <input type="email" id="email" placeholder="Enter Email" autocomplete="off">
-        
-        <!-- Updated Password Field -->
-        <div class="password-container">
-            <input type="password" id="password" placeholder="Enter Password" autocomplete="current-password">
-            <span class="toggle-password" onclick="togglePassword('password', this)">SHOW</span>
-        </div>
 
-        <button class="login-btn" onclick="login()">Login</button>
+<div class="card">
+    <div class="logo">💰</div>
+    <h2>FinancePro</h2>
+    <p class="subtitle">Login to manage your finances</p>
 
-        <div class="signup-link">
-            Don't have an account? <a href="signup.html">Sign Up</a>
-        </div>
+    <div class="error-banner" id="error-banner"></div>
+
+    <div class="input-group">
+        <input type="email" id="email" placeholder="Email address">
+        <span class="input-icon" id="email-icon"></span>
     </div>
- 
-    <script>
-        // NEW: Toggle Function
-        function togglePassword(inputId, element) {
-            const passwordInput = document.getElementById(inputId);
-            if (passwordInput.type === "password") {
-                passwordInput.type = "text";
-                element.textContent = "HIDE";
-            } else {
-                passwordInput.type = "password";
-                element.textContent = "SHOW";
+    <div class="field-msg" id="email-msg"></div>
+
+    <div class="input-group">
+        <input type="password" id="password" placeholder="Password">
+        <button class="toggle-btn" type="button" aria-label="Toggle password visibility" id="eye-btn">
+            <svg id="eye-icon" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        </button>
+    </div>
+    <div class="field-msg" id="password-msg"></div>
+
+    <div class="forgot"><a id="forgot-password-link">Forgot password?</a></div>
+
+    <button class="submit-btn" id="login-btn" disabled>Login</button>
+
+    <div class="footer-link">
+        Don't have an account? <a href="signup.html">Sign Up</a>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API_URL = "http://localhost:3002";
+
+    /* ── Global references for inline form validation logic ── */
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const loginBtn = document.getElementById("login-btn");
+    const emailMsg = document.getElementById("email-msg");
+    const passwordMsg = document.getElementById("password-msg");
+    const emailIcon = document.getElementById("email-icon");
+    const errorBanner = document.getElementById("error-banner");
+
+    let emailOk = false, passwordOk = false;
+
+    /* ── Validation Event Listeners ── */
+    emailInput.addEventListener("input", () => {
+        const val = emailInput.value.trim();
+        const fmt = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        hideBanner();
+
+        if (!val) {
+            emailInput.className = ""; emailIcon.textContent = ""; emailMsg.textContent = ""; emailMsg.className = "field-msg";
+            emailOk = false;
+        } else if (!fmt.test(val)) {
+            emailInput.className = "invalid"; emailIcon.textContent = "❌";
+            emailMsg.textContent = "Enter a valid email address"; emailMsg.className = "field-msg err";
+            emailOk = false;
+        } else {
+            emailInput.className = "valid"; emailIcon.textContent = "✅";
+            emailMsg.textContent = ""; emailMsg.className = "field-msg";
+            emailOk = true;
+        }
+        checkReady();
+    });
+
+    passwordInput.addEventListener("input", () => {
+        const val = passwordInput.value;
+        hideBanner();
+
+        if (!val) {
+            passwordInput.className = ""; passwordMsg.textContent = ""; passwordMsg.className = "field-msg";
+            passwordOk = false;
+        } else if (val.length < 6) {
+            passwordInput.className = "invalid";
+            passwordMsg.textContent = "Password must be at least 6 characters"; passwordMsg.className = "field-msg err";
+            passwordOk = false;
+        } else {
+            passwordInput.className = "valid";
+            passwordMsg.textContent = ""; passwordMsg.className = "field-msg";
+            passwordOk = true;
+        }
+        checkReady();
+    });
+
+    function checkReady() {
+        loginBtn.disabled = !(emailOk && passwordOk);
+    }
+
+    /* ── Enter key shortcut handler ── */
+    passwordInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && emailOk && passwordOk) login();
+    });
+
+    /* ── Login Action Handler via Express API Backend ── */
+    loginBtn.addEventListener("click", login);
+
+    async function login() {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Signing in...";
+        loginBtn.classList.add("loading");
+        hideBanner();
+
+        try {
+            const response = await fetch(`${API_URL}/api/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Invalid credentials.");
             }
+
+            loginBtn.classList.remove("loading");
+            loginBtn.textContent = "✓ Success!";
+            
+            localStorage.setItem("currentUserId", data.userId || data.id);
+            localStorage.setItem("userName", data.name || email.split('@')[0]);
+            
+            showToast("Welcome back to FinancePro!", "success");
+            setTimeout(() => window.location.href = "index.html", 1200);
+
+        } catch (error) {
+            console.error("Local Server connection error:", error.message);
+            loginBtn.classList.remove("loading");
+            loginBtn.disabled = false;
+            loginBtn.textContent = "Login";
+            showBanner(error.message || "Could not connect to the Express server.");
+        }
+    }
+
+    /* ── Safety-First Password Reset Handler ── */
+    document.getElementById("forgot-password-link").addEventListener("click", async () => {
+        const email = emailInput.value.trim();
+        if (!email || !emailOk) {
+            showBanner("Please type a valid email address first so we know where to send the link.");
+            return;
         }
 
-        async function login() {
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            if (!email || !password) return alert("Please fill all fields");
-            
-            try {
-                const response = await fetch("http://localhost:3001/api/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, password })
-                });
-                const result = await response.json();
-                if (response.ok && result.id) {
-                    localStorage.setItem("currentUserId", result.id);
-                    localStorage.setItem("userName", result.username);
-                    alert("Login Successful");
-                    window.location.href = "index.html";
-                } else {
-                    alert(result.message || "Login failed.");
-                }
-            } catch (error) {
-                alert("Cannot connect to server.");
+        hideBanner();
+        showToast("Processing request...", "success");
+
+        try {
+            const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email })
+            });
+
+            // Handle non-JSON data natively before parsing crashes JavaScript
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("The server route is missing or misconfigured. (Returned HTML instead of JSON)");
             }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to process forgot password query.");
+            }
+
+            showToast(data.message || "Password recovery instructions sent!", "success");
+        } catch (error) {
+            console.error("Forgot Password Error:", error.message);
+            showBanner(error.message);
         }
-    </script>
+    });
+
+    /* ── Utility Layout UI Actions ── */
+    function showToast(msg, type = "success") {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = `toast ${type} show`;
+        setTimeout(() => t.className = "toast", 3500);
+    }
+
+    function showBanner(msg) {
+        errorBanner.textContent = msg;
+        errorBanner.classList.add("show");
+    }
+    
+    function hideBanner() {
+        errorBanner.classList.remove("show");
+    }
+
+    // Toggle password utility handler
+    document.getElementById("eye-btn").addEventListener("click", () => {
+        const icon = document.getElementById("eye-icon");
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            icon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+        } else {
+            passwordInput.type = "password";
+            icon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+        }
+    });
+</script>
 </body>
 </html>

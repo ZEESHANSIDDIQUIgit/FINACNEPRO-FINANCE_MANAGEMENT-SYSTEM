@@ -1,19 +1,18 @@
 <!DOCTYPE html>
-<html lang="en font-backward-compatibility">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Finance Manager Pro</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -21,28 +20,42 @@
             color: #e5e5e5;
         }
 
-        /* --- Style for Currency --- */
         .currency-label {
-            font-family: 'JetBrains Mono', monospace; 
+            font-family: 'JetBrains Mono', monospace;
             font-weight: 600;
-            font-size: 0.85em; 
+            font-size: 0.85em;
             margin-right: 4px;
             text-transform: uppercase;
         }
 
+        /* ── Sidebar ── */
         .sidebar {
             width: 250px;
             height: 100vh;
             position: fixed;
+            top: 0;
+            left: 0;
             background: #0f0f0f;
             border-right: 1px solid rgba(255,215,0,0.15);
             padding: 25px;
+            transition: transform 0.3s ease, width 0.3s ease;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        body.sidebar-collapsed .sidebar {
+            transform: translateX(-250px);
+        }
+
+        body.sidebar-collapsed .main {
+            margin-left: 0;
         }
 
         .sidebar h2 {
             font-size: 20px;
             color: gold;
             margin-bottom: 25px;
+            white-space: nowrap;
         }
 
         .sidebar a {
@@ -54,34 +67,79 @@
             margin: 18px 0;
             font-size: 14px;
             cursor: pointer;
+            white-space: nowrap;
         }
 
-        .sidebar a:hover {
+        .sidebar a:hover, .sidebar a.active-nav { color: gold; }
+
+        /* ── Toggle button ── */
+        .sidebar-toggle {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 200;
+            background: #0f0f0f;
+            border: 1px solid rgba(255,215,0,0.25);
             color: gold;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, left 0.3s ease;
+            flex-shrink: 0;
         }
 
+        body:not(.sidebar-collapsed) .sidebar-toggle {
+            left: 213px;
+        }
+
+        .sidebar-toggle:hover { background: rgba(255,215,0,0.1); }
+
+        .sidebar-toggle svg {
+            width: 18px;
+            height: 18px;
+            stroke: gold;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+
+        /* ── Main content ── */
         .main {
             margin-left: 270px;
             padding: 30px;
+            transition: margin-left 0.3s ease;
         }
 
+        .app-view {
+            display: none;
+        }
+        .app-view.view-active {
+            display: block;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 90;
+        }
+
+        /* ── Header ── */
         .header-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 25px;
+            padding-left: 10px;
         }
 
-        .page-title {
-            font-size: 30px;
-            font-weight: 700;
-            color: gold;
-        }
-
-        .sub-title {
-            font-size: 13px;
-            color: #aaa;
-        }
+        .page-title { font-size: 30px; font-weight: 700; color: gold; }
+        .sub-title { font-size: 13px; color: #aaa; }
 
         .month-selector-box {
             display: flex;
@@ -93,15 +151,11 @@
             border: 1px solid rgba(255,215,0,0.15);
         }
 
-        .month-selector-box label {
-            font-size: 13px;
-            font-weight: 600;
-            color: gold;
-        }
+        .month-selector-box label { font-size: 13px; font-weight: 600; color: gold; }
 
-        #global-month {
-            background: #0a0a0a;
-            color: white;
+        input[type="month"], input[type="text"], input[type="number"], select {
+            background-color: #0a0a0a !important;
+            color: white !important;
             border: 1px solid #333;
             padding: 8px 12px;
             border-radius: 8px;
@@ -109,10 +163,13 @@
             cursor: pointer;
         }
 
-        #global-month:focus {
-            border-color: gold;
+        input[type="month"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
         }
 
+        input:focus, select:focus { border-color: gold !important; }
+
+        /* ── Cards ── */
         .cards {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -127,18 +184,10 @@
             position: relative;
         }
 
-        .card h3 {
-            font-size: 13px;
-            color: #aaa;
-        }
+        .card h3 { font-size: 13px; color: #aaa; }
+        .card p { font-size: 24px; font-weight: 700; margin-top: 10px; }
 
-        .card p {
-            font-size: 24px;
-            font-weight: 700;
-            margin-top: 10px;
-        }
-
-        .income { color: #22c55e; }
+        .income  { color: #22c55e; }
         .expense { color: #ef4444; }
         .balance { color: gold; }
 
@@ -156,18 +205,6 @@
             border-radius: 16px;
             margin-bottom: 20px;
         }
-
-        input, select {
-            padding: 12px;
-            margin: 5px;
-            border-radius: 10px;
-            border: 1px solid #333;
-            background: #0a0a0a;
-            color: white;
-            outline: none;
-        }
-
-        input:focus { border-color: gold; }
 
         button {
             padding: 12px 16px;
@@ -239,10 +276,7 @@
             padding: 20px;
         }
 
-        .chart-card h3 {
-            color: gold;
-            margin-bottom: 15px;
-        }
+        .chart-card h3 { color: gold; margin-bottom: 15px; }
 
         .card-header-flex {
             display: flex;
@@ -261,184 +295,400 @@
             cursor: pointer;
         }
 
-        .inner-reset-btn:hover {
-            background: #ef4444;
+        .inner-reset-btn:hover { background: #ef4444; color: white; }
+
+        .registry-summary-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #111;
+            border: 1px solid rgba(255,215,0,0.2);
+            padding: 16px 24px;
+            border-radius: 16px;
+            margin-top: 15px;
+        }
+        .summary-item { font-size: 14px; font-weight: 600; }
+        .summary-item span { margin-left: 5px; font-size: 16px; }
+
+        /* Report View Layout Updates */
+        .report-selection-container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+            background: #151515;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,215,0,0.1);
+        }
+        .report-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .report-field label {
+            font-size: 12px;
+            color: gold;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .report-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 14px;
+            margin-top: 10px;
             color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border-radius: 10px;
+            transition: opacity 0.2s ease;
+        }
+        .report-btn:hover {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-250px); }
+            body:not(.sidebar-collapsed) .sidebar { transform: translateX(0); }
+            body:not(.sidebar-collapsed) .sidebar-overlay { display: block; }
+            .main { margin-left: 0 !important; }
+            body:not(.sidebar-collapsed) .sidebar-toggle { left: 213px; }
+            body.sidebar-collapsed .sidebar-toggle { left: 18px; }
+            .cards { grid-template-columns: 1fr; }
+            .registry-summary-bar { flex-direction: column; gap: 10px; }
         }
     </style>
 </head>
 
-<body>
+<body class="sidebar-collapsed">
+
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+        <svg id="toggle-icon" viewBox="0 0 24 24">
+            <line x1="3" y1="6"  x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+    </button>
 
     <div class="sidebar">
         <h2>💰 FinancePro</h2>
         <p id="user-display" style="font-size: 12px; color: #888; margin-bottom: 20px;">Logged in as: ...</p>
-        <a href="#">📊 Overview</a>
-        <a href="#">💸 Transactions</a>
-        <a href="#">📁 Reports</a>
+        <a onclick="switchView('overview')" id="nav-overview" class="active-nav">📊 Overview</a>
+        <a onclick="switchView('transactions')" id="nav-transactions">💸 Transactions</a>
+        <a onclick="switchView('reports')" id="nav-reports">📁 Reports</a>
         <a onclick="logout()" class="logout-btn">🚪 Logout</a>
     </div>
 
     <div class="main">
-        <div class="header-container">
-            <div>
-                <div class="page-title">Financial Overview</div>
-                <div class="sub-title">Real-time data analytics for your personal budget</div>
+
+        <div id="view-overview" class="app-view view-active">
+            <div class="header-container">
+                <div style="margin-left: 44px;">
+                    <div class="page-title">Financial Overview</div>
+                    <div class="sub-title">Real-time data analytics for your personal budget</div>
+                </div>
+                <div class="month-selector-box">
+                    <label for="global-month">Active Month:</label>
+                    <input type="month" id="global-month" onchange="loadAll()">
+                </div>
             </div>
-            <div class="month-selector-box">
-                <label for="global-month">Active Month:</label>
-                <input type="month" id="global-month" onchange="loadAll()">
+
+            <div class="cards">
+                <div class="card">
+                    <h3>Total Income</h3>
+                    <p class="income" id="income"><span class="currency-label">RS.</span> 0.00</p>
+                </div>
+                <div class="card">
+                    <h3>Total Expenses</h3>
+                    <p class="expense" id="expense"><span class="currency-label">RS.</span> 0.00</p>
+                </div>
+                <div class="card">
+                    <h3>Balance</h3>
+                    <p class="balance" id="balance"><span class="currency-label">RS.</span> 0.00</p>
+                </div>
+            </div>
+
+            <div class="section-title">🎯 Set Monthly Budget</div>
+            <div class="form-box">
+                <input id="budget-category" type="text" placeholder="Category (e.g., Food)">
+                <input id="budget-limit" type="number" placeholder="Monthly Limit">
+                <button onclick="addBudget()">Set Budget</button>
+            </div>
+
+            <div class="section-title">📊 Budget Status</div>
+            <div id="budget-list" class="cards"></div>
+
+            <div class="section-title">➕ Add Transaction</div>
+            <div class="form-box">
+                <select id="type">
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+                <input id="amount" type="number" placeholder="Amount">
+                <input id="category" type="text" placeholder="Category (e.g., Food)">
+                <input id="description" type="text" placeholder="Description">
+                <button onclick="addTransaction()">Add Transaction</button>
+            </div>
+
+            <div class="section-title">📈 Financial Analytics</div>
+            <div class="analytics-container">
+                <div class="chart-card">
+                    <h3>Monthly Income vs Expense</h3>
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Expense Categories</h3>
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="section-title">🏢 Accumulative & Yearly Metrics Summary</div>
+            <div class="cards" style="margin-bottom: 25px;">
+                <div class="card" style="border: 1px solid rgba(34, 197, 94, 0.4);">
+                    <h3 id="yearly-income-title">Yearly Income</h3>
+                    <p class="income" id="yearly-income"><span class="currency-label">RS.</span> 0.00</p>
+                </div>
+                <div class="card" style="border: 1px solid rgba(239, 68, 68, 0.4);">
+                    <h3 id="yearly-expense-title">Yearly Expenses</h3>
+                    <p class="expense" id="yearly-expense"><span class="currency-label">RS.</span> 0.00</p>
+                </div>
+                <div class="card" style="background: linear-gradient(145deg, #1e1b4b, #0f172a); border: 1px solid gold;">
+                    <h3>👑 Net Worth (All-Time)</h3>
+                    <p class="balance" id="net-worth" style="text-shadow: 0 0 10px rgba(255,215,0,0.3);"><span class="currency-label">RS.</span> 0.00</p>
+                </div>
             </div>
         </div>
 
-        <div class="cards">
-            <div class="card">
-                <h3>Total Income</h3>
-                <p class="income" id="income"><span class="currency-label">RS.</span> 0.00</p>
+        <div id="view-transactions" class="app-view">
+            <div class="header-container">
+                <div style="margin-left: 44px;">
+                    <div class="page-title">Transaction Registry</div>
+                    <div class="sub-title">Filter and browse your full history records</div>
+                </div>
+                <div class="month-selector-box">
+                    <label for="history-month">Filter Month:</label>
+                    <input type="month" id="history-month" onchange="loadDetailedHistory()">
+                </div>
             </div>
-            <div class="card">
-                <h3>Total Expenses</h3>
-                <p class="expense" id="expense"><span class="currency-label">RS.</span> 0.00</p>
-            </div>
-            <div class="card">
-                <h3>Balance</h3>
-                <p class="balance" id="balance"><span class="currency-label">RS.</span> 0.00</p>
+
+            <div class="section-title">📜 Month Records Statement</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body"></tbody>
+            </table>
+
+            <div class="registry-summary-bar">
+                <div class="summary-item" style="color: #22c55e;">Total Income: <span id="reg-total-income">RS. 0.00</span></div>
+                <div class="summary-item" style="color: #ef4444;">Total Expense: <span id="reg-total-expense">RS. 0.00</span></div>
+                <div class="summary-item" style="color: gold;">Net Month Stand: <span id="reg-total-net">RS. 0.00</span></div>
             </div>
         </div>
 
-        <div class="section-title">🎯 Set Monthly Budget</div>
-        <div class="form-box">
-            <input id="budget-category" placeholder="Category (e.g., Food)">
-            <input id="budget-limit" type="number" placeholder="Monthly Limit">
-            <button onclick="addBudget()">Set Budget</button>
-        </div>
-
-        <div class="section-title">📊 Budget Status</div>
-        <div id="budget-list" class="cards"></div>
-
-        <div class="section-title">➕ Add Transaction</div>
-        <div class="form-box">
-            <select id="type">
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
-            </select>
-            <input id="amount" type="number" placeholder="Amount">
-            <input id="category" placeholder="Category (e.g., Food)">
-            <input id="description" placeholder="Description">
-            <button onclick="addTransaction()">Add Transaction</button>
-        </div>
-
-        <div class="section-title">📈 Financial Analytics</div>
-        <div class="analytics-container">
-            <div class="chart-card">
-                <h3>Monthly Income vs Expense</h3>
-                <canvas id="monthlyChart"></canvas>
+        <div id="view-reports" class="app-view">
+            <div class="header-container">
+                <div style="margin-left: 44px;">
+                    <div class="page-title">Report Center</div>
+                    <div class="sub-title">Export your ledger statements into professional formats</div>
+                </div>
             </div>
-            <div class="chart-card">
-                <h3>Expense Categories</h3>
-                <canvas id="categoryChart"></canvas>
-            </div>
-        </div>
 
-        <div class="section-title">📜 Transaction History</div>
-        <table style="margin-bottom: 30px;">
-            <thead>
-                <tr>
-                    <th>Type</th>
-                    <th>Amount</th>
-                    <th>Category</th>
-                    <th>Description</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="table"></tbody>
-        </table>
+            <div class="section-title">📁 Compile Document</div>
+            <div class="form-box">
+                <p style="margin-bottom: 20px; color: #aaa; font-size: 14px;">Select report architecture timeframe, pick parameters, and trigger compile output builders below:</p>
+                
+                <div class="report-selection-container">
+                    <div class="report-field">
+                        <label for="report-type-select">Report Scope</label>
+                        <select id="report-type-select" onchange="toggleReportScopeInputs()">
+                            <option value="monthly">Monthly Scope Statement</option>
+                            <option value="yearly">Full Yearly Scope Statement</option>
+                        </select>
+                    </div>
 
-        <div class="section-title">🏢 Accumulative & Yearly Metrics Summary</div>
-        <div class="cards" style="margin-bottom: 25px;">
-            <div class="card" style="border: 1px solid rgba(34, 197, 94, 0.4);">
-                <h3 id="yearly-income-title">Yearly Income</h3>
-                <p class="income" id="yearly-income"><span class="currency-label">RS.</span> 0.00</p>
-            </div>
-            <div class="card" style="border: 1px solid rgba(239, 68, 68, 0.4);">
-                <h3 id="yearly-expense-title">Yearly Expenses</h3>
-                <p class="expense" id="yearly-expense"><span class="currency-label">RS.</span> 0.00</p>
-            </div>
-            <div class="card" style="background: linear-gradient(145deg, #1e1b4b, #0f172a); border: 1px solid gold;">
-                <h3>👑 Net Worth (All-Time)</h3>
-                <p class="balance" id="net-worth" style="text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);"><span class="currency-label">RS.</span> 0.00</p>
+                    <div class="report-field" id="wrapper-report-month">
+                        <label for="report-month">Target Month</label>
+                        <input type="month" id="report-month">
+                    </div>
+
+                    <div class="report-field" id="wrapper-report-year" style="display:none;">
+                        <label for="report-year">Target Year</label>
+                        <select id="report-year">
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2025">2025</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="report-grid">
+                    <button class="report-btn" onclick="generateExcelReport()" style="background: #1d6f42;">📊 Export Spreadsheet (.xlsx)</button>
+                    <button class="report-btn" onclick="generatePDFReport()" style="background: #ef4444;">📄 Export PDF Statement (.pdf)</button>
+                    <button class="report-btn" onclick="generateWordReport()" style="background: #2b579a;">📝 Export Word Document (.doc)</button>
+                </div>
             </div>
         </div>
+
     </div>
 
 <script>
-    const API = "http://localhost:3002"; 
-    const CURR_HTML = `<span class="currency-label">RS.</span>`; 
+    const API = "http://localhost:3002";
+    const CURR_HTML = `<span class="currency-label">RS.</span>`;
 
-    const USER_ID = localStorage.getItem("currentUserId");
+    const USER_ID  = localStorage.getItem("currentUserId");
     const USER_NAME = localStorage.getItem("userName");
 
     if (!USER_ID) {
-        window.location.href = "login.html";
+        window.location.href = "LOGIN.HTML";
     } else {
         document.getElementById("user-display").innerText = `Logged in as: ${USER_NAME}`;
     }
 
+    function switchView(viewName) {
+        document.querySelectorAll('.app-view').forEach(view => view.classList.remove('view-active'));
+        document.getElementById(`view-${viewName}`).classList.add('view-active');
+
+        document.querySelectorAll('.sidebar a').forEach(link => link.classList.remove('active-nav'));
+        document.getElementById(`nav-${viewName}`).classList.add('active-nav');
+
+        if (viewName === 'overview') {
+            loadAll();
+        } else if (viewName === 'transactions') {
+            initTargetMonthPicker("history-month");
+            loadDetailedHistory();
+        } else if (viewName === 'reports') {
+            initTargetMonthPicker("report-month");
+            toggleReportScopeInputs();
+        }
+    }
+
+    function toggleSidebar() {
+        document.body.classList.toggle("sidebar-collapsed");
+        const isCollapsed = document.body.classList.contains("sidebar-collapsed");
+        document.querySelector(".main").style.marginLeft = isCollapsed ? "0" : "270px";
+    }
+
     function initMonthPicker() {
-        const picker = document.getElementById("global-month");
-        if (!picker.value) {
+        initTargetMonthPicker("global-month");
+    }
+
+    function initTargetMonthPicker(elementId) {
+        const picker = document.getElementById(elementId);
+        if (picker && !picker.value) {
             const today = new Date();
             const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            picker.value = `${yyyy}-${mm}`; 
+            const mm = String(today.getMonth() + 1).padStart(2, "0");
+            picker.value = `${yyyy}-${mm}`;
+        }
+    }
+
+    function toggleReportScopeInputs() {
+        const mode = document.getElementById("report-type-select").value;
+        if(mode === 'monthly') {
+            document.getElementById("wrapper-report-month").style.display = "block";
+            document.getElementById("wrapper-report-year").style.display = "none";
+        } else {
+            document.getElementById("wrapper-report-month").style.display = "none";
+            document.getElementById("wrapper-report-year").style.display = "block";
+        }
+    }
+
+    /* Standardized human-readable date/time helper */
+    function formatTimestamp(timestampStr) {
+        if (!timestampStr) return "-";
+        try {
+            const dateObj = new Date(timestampStr);
+            if (isNaN(dateObj.getTime())) return timestampStr; 
+            
+            const yyyy = dateObj.getFullYear();
+            const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+            const dd = String(dateObj.getDate()).padStart(2, "0");
+            const hh = String(dateObj.getHours()).padStart(2, "0");
+            const min = String(dateObj.getMinutes()).padStart(2, "0");
+            const ss = String(dateObj.getSeconds()).padStart(2, "0");
+            
+            return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+        } catch(e) {
+            return "-";
         }
     }
 
     async function loadAll() {
         initMonthPicker();
-        const selectedMonth = document.getElementById("global-month").value; 
-        
-        // FIXED: Shifted summary loop invocation execution to the very top
-        await loadYearlyAndNetWorth(); 
-        await loadTransactions(selectedMonth);
+        const selectedMonth = document.getElementById("global-month").value;
+        await loadYearlyAndNetWorth();
+        await loadTransactionsMetrics(selectedMonth);
         await loadBudgets(selectedMonth);
         await loadCharts(selectedMonth);
     }
 
-    async function loadTransactions(month) {
+    async function loadTransactionsMetrics(month) {
         const res = await fetch(`${API}/transactions/${USER_ID}?month=${month}`);
         const transactions = await res.json();
 
-        let income = 0;
-        let expense = 0;
+        let income = 0, expense = 0;
+        transactions.forEach(t => {
+            const amt = Number(t.amount);
+            if (t.type === "income") income += amt; else expense += amt;
+        });
 
-        document.getElementById("table").innerHTML =
-            transactions.map(t => {
-                const amt = Number(t.amount);
-                if (t.type === "income") income += amt;
-                else expense += amt;
+        document.getElementById("income").innerHTML  = `${CURR_HTML} ${income.toLocaleString(undefined,{minimumFractionDigits:2})}`;
+        document.getElementById("expense").innerHTML = `${CURR_HTML} ${expense.toLocaleString(undefined,{minimumFractionDigits:2})}`;
+        document.getElementById("balance").innerHTML = `${CURR_HTML} ${(income-expense).toLocaleString(undefined,{minimumFractionDigits:2})}`;
+    }
 
-                return `
-                    <tr>
-                        <td style="color:${t.type === 'income' ? '#22c55e' : '#ef4444'}">
-                            ${t.type.toUpperCase()}
-                        </td>
-                        <td>${CURR_HTML} ${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                        <td>${t.category || "-"}</td>
-                        <td>${t.description || "-"}</td>
-                        <td>
-                            <button onclick="del(${t.id})"
-                            style="background:#ef4444;color:white;padding:5px 10px;">
+    async function loadDetailedHistory() {
+        const targetMonth = document.getElementById("history-month").value;
+        const res = await fetch(`${API}/transactions/${USER_ID}?month=${targetMonth}`);
+        const transactions = await res.json();
+
+        let totalIncome = 0;
+        let totalExpense = 0;
+
+        document.getElementById("history-table-body").innerHTML = transactions.map(t => {
+            const amt = Number(t.amount);
+            if (t.type === "income") totalIncome += amt; else totalExpense += amt;
+
+            const rowTime = t.created_at || t.timestamp || t.date || "-";
+
+            return `
+                <tr>
+                    <td style="font-family: 'JetBrains Mono', monospace; color: #aaa;">${formatTimestamp(rowTime)}</td>
+                    <td style="color:${t.type === "income" ? "#22c55e" : "#ef4444"}">${t.type.toUpperCase()}</td>
+                    <td>${CURR_HTML} ${amt.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td>${t.category || "-"}</td>
+                    <td>${t.description || "-"}</td>
+                    <td>
+                        <button onclick="del(${t.id}, 'transactions')" style="background:#ef4444;color:white;padding:5px 10px;">
                             Delete
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join("");
+                        </button>
+                    </td>
+                </tr>`;
+        }).join("");
 
-        document.getElementById("income").innerHTML = `${CURR_HTML} ${income.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        document.getElementById("expense").innerHTML = `${CURR_HTML} ${expense.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-        document.getElementById("balance").innerHTML = `${CURR_HTML} ${(income - expense).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        const fmt = n => `${CURR_HTML} ${n.toLocaleString(undefined, {minimumFractionDigits:2})}`;
+        document.getElementById("reg-total-income").innerHTML = fmt(totalIncome);
+        document.getElementById("reg-total-expense").innerHTML = fmt(totalExpense);
+        document.getElementById("reg-total-net").innerHTML = fmt(totalIncome - totalExpense);
     }
 
     async function loadBudgets(month) {
@@ -447,8 +697,8 @@
 
         document.getElementById("budget-list").innerHTML =
             budgets.map(b => {
-                const spent = Number(b.actual_spent);
-                const limit = Number(b.limit_amount);
+                const spent   = Number(b.actual_spent);
+                const limit   = Number(b.limit_amount);
                 const percent = limit > 0 ? Math.min((spent / limit) * 100, 100) : 0;
                 const barColor = percent > 90 ? "#ef4444" : "gold";
 
@@ -460,163 +710,433 @@
                         </div>
                         <p>${CURR_HTML} ${spent.toFixed(0)} / ${CURR_HTML} ${limit.toFixed(0)}</p>
                         <div class="progress-container">
-                            <div class="progress-fill"
-                            style="width:${percent}%;background:${barColor};"></div>
+                            <div class="progress-fill" style="width:${percent}%;background:${barColor};"></div>
                         </div>
                         <small style="display:block;margin-top:5px;color:#aaa;">
                             ${spent >= limit
-                                ? '⚠️ Limit Reached'
-                                : CURR_HTML + ' ' + (limit - spent).toFixed(0) + ' remaining'}
+                                ? "⚠️ Limit Reached"
+                                : CURR_HTML + " " + (limit - spent).toFixed(0) + " remaining"}
                         </small>
-                    </div>
-                `;
+                    </div>`;
             }).join("");
     }
 
-    let monthlyChartInstance;
-    let categoryChartInstance;
+    let monthlyChartInstance, categoryChartInstance;
 
     async function loadCharts(month) {
-        const monthlyRes = await fetch(`${API}/api/analytics/monthly/${USER_ID}`);
-        const monthlyData = await monthlyRes.json();
-        
-        const categoryRes = await fetch(`${API}/api/analytics/categories/${USER_ID}?month=${month}`);
+        const [monthlyRes, categoryRes] = await Promise.all([
+            fetch(`${API}/api/analytics/monthly/${USER_ID}`),
+            fetch(`${API}/api/analytics/categories/${USER_ID}?month=${month}`)
+        ]);
+        const monthlyData  = await monthlyRes.json();
         const categoryData = await categoryRes.json();
 
-        if (monthlyChartInstance) monthlyChartInstance.destroy();
+        if (monthlyChartInstance)  monthlyChartInstance.destroy();
         if (categoryChartInstance) categoryChartInstance.destroy();
 
         monthlyChartInstance = new Chart(document.getElementById("monthlyChart"), {
-                type: "bar",
-                data: {
-                    labels: monthlyData.map(r => r.month_year),
-                    datasets: [
-                        { label: "Income", data: monthlyData.map(r => r.total_income), backgroundColor: "#22c55e" },
-                        { label: "Expense", data: monthlyData.map(r => r.total_expense), backgroundColor: "#ef4444" }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: "white" } } },
-                    scales: {
-                        x: { ticks: { color: "white" } },
-                        y: { ticks: { color: "white" } }
-                    }
-                }
+            type: "bar",
+            data: {
+                labels: monthlyData.map(r => r.month_year),
+                datasets: [
+                    { label: "Income",  data: monthlyData.map(r => r.total_income),  backgroundColor: "#22c55e" },
+                    { label: "Expense", data: monthlyData.map(r => r.total_expense), backgroundColor: "#ef4444" }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: "white" } } },
+                scales: { x: { ticks: { color: "white" } }, y: { ticks: { color: "white" } } }
             }
-        );
+        });
 
         categoryChartInstance = new Chart(document.getElementById("categoryChart"), {
-                type: "doughnut",
-                data: {
-                    labels: categoryData.map(r => r.category),
-                    datasets: [{
-                        data: categoryData.map(r => r.total_amount),
-                        backgroundColor: ["#FFD700","#22c55e","#ef4444","#3b82f6","#a855f7","#f97316"]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: "white" } } }
-                }
+            type: "doughnut",
+            data: {
+                labels: categoryData.map(r => r.category),
+                datasets: [{
+                    data: categoryData.map(r => r.total_amount),
+                    backgroundColor: ["#FFD700","#22c55e","#ef4444","#3b82f6","#a855f7","#f97316"]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: "white" } } }
             }
-        );
+        });
     }
 
     async function loadYearlyAndNetWorth() {
-        const selectedMonth = document.getElementById("global-month").value; 
-        const currentYear = selectedMonth.split("-")[0]; 
-        
-        document.getElementById("yearly-income-title").innerText = `Yearly Income (${currentYear})`;
+        const selectedMonth = document.getElementById("global-month").value;
+        const currentYear   = selectedMonth.split("-")[0];
+
+        document.getElementById("yearly-income-title").innerText  = `Yearly Income (${currentYear})`;
         document.getElementById("yearly-expense-title").innerText = `Yearly Expenses (${currentYear})`;
 
         try {
-            const res = await fetch(`${API}/api/analytics/yearly-summary/${USER_ID}?year=${currentYear}`);
+            const res  = await fetch(`${API}/api/analytics/yearly-summary/${USER_ID}?year=${currentYear}`);
             const data = await res.json();
 
-            const yearlyInc = Number(data.yearlyIncome);
-            const yearlyExp = Number(data.yearlyExpense);
-            const netWorth = Number(data.netWorth);
-
-            document.getElementById("yearly-income").innerHTML = `${CURR_HTML} ${yearlyInc.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            document.getElementById("yearly-expense").innerHTML = `${CURR_HTML} ${yearlyExp.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            document.getElementById("net-worth").innerHTML = `${CURR_HTML} ${netWorth.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            const fmt = n => Number(n).toLocaleString(undefined, {minimumFractionDigits:2});
+            document.getElementById("yearly-income").innerHTML  = `${CURR_HTML} ${fmt(data.yearlyIncome)}`;
+            document.getElementById("yearly-expense").innerHTML = `${CURR_HTML} ${fmt(data.yearlyExpense)}`;
+            document.getElementById("net-worth").innerHTML      = `${CURR_HTML} ${fmt(data.netWorth)}`;
         } catch (err) {
-            console.error("Error retrieving yearly metrics summary data:", err);
+            console.error("Yearly metrics error:", err);
         }
     }
 
     async function addTransaction() {
-        const type = document.getElementById("type").value;
-        const amount = document.getElementById("amount").value;
-        const category = document.getElementById("category").value;
+        const type        = document.getElementById("type").value;
+        const amount      = document.getElementById("amount").value;
+        const category    = document.getElementById("category").value;
         const description = document.getElementById("description").value;
-        const selectedMonth = document.getElementById("global-month").value; 
-        
+        const month       = document.getElementById("global-month").value;
+
         if (!amount || !category) return alert("Please enter amount and category");
 
         await fetch(`${API}/transactions`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: USER_ID, type, amount, category, description, month: selectedMonth })
+            body: JSON.stringify({ userId: USER_ID, type, amount, category, description, month })
         });
 
-        document.getElementById("amount").value = "";
-        document.getElementById("category").value = "";
+        document.getElementById("amount").value      = "";
+        document.getElementById("category").value    = "";
         document.getElementById("description").value = "";
         await loadAll();
     }
 
     async function addBudget() {
-        const category = document.getElementById("budget-category").value;
+        const category     = document.getElementById("budget-category").value;
         const limit_amount = document.getElementById("budget-limit").value;
-        const selectedMonth = document.getElementById("global-month").value; 
-        
+        const month        = document.getElementById("global-month").value;
+
         if (!category || !limit_amount) return alert("Please enter category and limit");
 
         await fetch(`${API}/budgets`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: USER_ID, category, limit_amount, month: selectedMonth })
+            body: JSON.stringify({ userId: USER_ID, category, limit_amount, month })
         });
 
         document.getElementById("budget-category").value = "";
-        document.getElementById("budget-limit").value = "";
+        document.getElementById("budget-limit").value    = "";
         await loadAll();
     }
 
     async function resetSingleBudget(categoryName) {
-        const selectedMonth = document.getElementById("global-month").value;
-        
-        if (confirm(`Clear your ${categoryName.toUpperCase()} budget limit for ${selectedMonth}? Your actual transactions will not be deleted.`)) {
+        const month = document.getElementById("global-month").value;
+        if (confirm(`Clear your ${categoryName.toUpperCase()} budget limit for ${month}? Transactions will not be deleted.`)) {
             try {
-                const res = await fetch(`${API}/api/reset-budget/${USER_ID}?month=${selectedMonth}&category=${encodeURIComponent(categoryName)}`, {
-                    method: "DELETE"
-                });
+                const res  = await fetch(`${API}/api/reset-budget/${USER_ID}?month=${month}&category=${encodeURIComponent(categoryName)}`, { method: "DELETE" });
                 const data = await res.json();
-                
                 alert(data.message);
-                await loadAll(); 
+                await loadAll();
             } catch (err) {
-                console.error("Error resetting category budget:", err);
-                alert("Something went wrong while resetting budget data.");
+                alert("Something went wrong while resetting budget.");
             }
         }
     }
 
-    async function del(id) {
+    async function del(id, currentViewContext) {
         if (confirm("Delete this transaction?")) {
             await fetch(`${API}/transactions/${id}`, { method: "DELETE" });
-            await loadAll();
+            if (currentViewContext === 'overview') {
+                await loadAll();
+            } else {
+                await loadDetailedHistory();
+            }
         }
     }
 
     function logout() {
-        localStorage.clear();
-        window.location.href = "login.html";
+        localStorage.removeItem("currentUserId");
+        localStorage.removeItem("userName");
+        window.location.href = "LOGIN.HTML";
     }
 
-    loadAll();
+    /* ── Advanced View 3 Dynamic Report Compiler Engine ── */
+    async function compileTargetReportPayload() {
+        const mode = document.getElementById("report-type-select").value;
+        let queryUrl = "";
+        let titleLabel = "";
+
+        if (mode === 'monthly') {
+            const targetMonth = document.getElementById("report-month").value;
+            if (!targetMonth) {
+                alert("Please select a target month.");
+                return null;
+            }
+            queryUrl = `${API}/transactions/${USER_ID}?month=${targetMonth}`;
+            titleLabel = `Monthly Financial Statement (${targetMonth})`;
+        } else {
+            const targetYear = document.getElementById("report-year").value;
+            queryUrl = `${API}/transactions/${USER_ID}?year=${targetYear}`;
+            titleLabel = `Yearly Financial Statement (${targetYear})`;
+        }
+
+        try {
+            const res = await fetch(queryUrl);
+            const transactions = await res.json();
+            
+            // Calculate report summaries
+            let totalIncome = 0;
+            let totalExpense = 0;
+            transactions.forEach(t => {
+                const amt = Number(t.amount) || 0;
+                if (t.type === "income") {
+                    totalIncome += amt;
+                } else {
+                    totalExpense += amt;
+                }
+            });
+
+            return { 
+                transactions, 
+                title: titleLabel,
+                totalIncome,
+                totalExpense,
+                netBalance: totalIncome - totalExpense
+            };
+        } catch (err) {
+            console.error("Error fetching report payload:", err);
+            alert("Failed to retrieve statement data.");
+            return null;
+        }
+    }
+
+    // ── 1. Export Spreadsheet (.xlsx) using SheetJS ──
+    async function generateExcelReport() {
+        const payload = await compileTargetReportPayload();
+        if (!payload) return;
+
+        const { transactions, title, totalIncome, totalExpense, netBalance } = payload;
+        
+        // Structured metadata & summary block styling for Excel output
+        const sheetData = [
+            [title],
+            [`Generated on: ${new Date().toLocaleString()}`],
+            [],
+            ["FINANCIAL SUMMARY STATS"],
+            ["Total Income", "Total Expenses", "Net Savings Status"],
+            [totalIncome, totalExpense, netBalance],
+            [],
+            ["TRANSACTION LEDGER RECORDS"],
+            ["Date & Time", "Type", "Amount (RS.)", "Category", "Description"]
+        ];
+
+        transactions.forEach(t => {
+            sheetData.push([
+                formatTimestamp(t.created_at || t.timestamp || t.date),
+                t.type.toUpperCase(),
+                Number(t.amount),
+                t.category || "-",
+                t.description || "-"
+            ]);
+        });
+
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Ledger Summary Statement");
+        XLSX.writeFile(workbook, `${title.replace(/[\s()]/g, "_")}.xlsx`);
+    }
+
+    // ── 2. Export PDF Statement (.pdf) using jsPDF & autoTable ──
+    async function generatePDFReport() {
+        const payload = await compileTargetReportPayload();
+        if (!payload) return;
+
+        const { transactions, title, totalIncome, totalExpense, netBalance } = payload;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Title styling
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(212, 175, 55); // Premium Gold
+        doc.text(title, 14, 25);
+
+        // Date generated info
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(140, 140, 140);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 32);
+
+        // Summary Card Grid Block
+        doc.setDrawColor(212, 175, 55); // Gold border
+        doc.setLineWidth(0.5);
+        doc.setFillColor(248, 249, 250); // Light contrast background
+        doc.rect(14, 38, 182, 22, "FD");
+
+        // Income Metrics Text
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(34, 197, 94); // Green
+        doc.text("TOTAL INCOME", 20, 45);
+        doc.setFont("Helvetica", "normal");
+        doc.setTextColor(34, 197, 94);
+        doc.text(`RS. ${totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}`, 20, 52);
+
+        // Expense Metrics Text
+        doc.setFont("Helvetica", "bold");
+        doc.setTextColor(239, 68, 68); // Red
+        doc.text("TOTAL EXPENSES", 80, 45);
+        doc.setFont("Helvetica", "normal");
+        doc.setTextColor(239, 68, 68);
+        doc.text(`RS. ${totalExpense.toLocaleString(undefined, {minimumFractionDigits: 2})}`, 80, 52);
+
+        // Balance Savings Status Text
+        doc.setFont("Helvetica", "bold");
+        doc.setTextColor(212, 175, 55); // Gold
+        doc.text("NET SAVINGS", 140, 45);
+        doc.setFont("Helvetica", "normal");
+        doc.setTextColor(15, 15, 15);
+        doc.text(`RS. ${netBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}`, 140, 52);
+
+        // Ledger Records Table Data Array
+        const tableColumns = ["Date & Time", "Type", "Amount", "Category", "Description"];
+        const tableRows = transactions.map(t => [
+            formatTimestamp(t.created_at || t.timestamp || t.date),
+            t.type.toUpperCase(),
+            `RS. ${Number(t.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}`,
+            t.category || "-",
+            t.description || "-"
+        ]);
+
+        doc.autoTable({
+            startY: 68,
+            head: [tableColumns],
+            body: tableRows,
+            theme: 'grid',
+            headStyles: { 
+                fillColor: [15, 15, 15], 
+                textColor: [212, 175, 55],
+                lineColor: [50, 50, 50],
+                lineWidth: 0.1
+            },
+            alternateRowStyles: { fillColor: [248, 248, 248] },
+            styles: { 
+                fontSize: 9, 
+                font: "Helvetica",
+                textColor: [50, 50, 50],
+                cellPadding: 4
+            },
+            columnStyles: {
+                0: { cellWidth: 40 }, // Date
+                1: { cellWidth: 20 }, // Type
+                2: { cellWidth: 35 }, // Amount
+                3: { cellWidth: 35 }, // Category
+                4: { cellWidth: 'auto' } // Description
+            }
+        });
+
+        doc.save(`${title.replace(/[\s()]/g, "_")}.pdf`);
+    }
+
+    // ── 3. Export Word Document (.doc) using HTML string formatting ──
+    async function generateWordReport() {
+        const payload = await compileTargetReportPayload();
+        if (!payload) return;
+
+        const { transactions, title, totalIncome, totalExpense, netBalance } = payload;
+
+        let htmlContent = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><title>${title}</title>
+            <style>
+                body { font-family: 'Arial', sans-serif; color: #222; line-height: 1.5; padding: 20px; }
+                h1 { color: #b58900; border-bottom: 2px solid #b58900; padding-bottom: 8px; font-size: 24px; }
+                .meta-text { color: #666; font-size: 12px; margin-bottom: 20px; }
+                
+                .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                .summary-table th { background-color: #f4f4f4; text-align: left; padding: 10px; border: 1px solid #ddd; font-size: 12px; }
+                .summary-table td { padding: 12px; border: 1px solid #ddd; font-size: 14px; font-weight: bold; }
+                
+                .ledger-title { color: #333; font-size: 18px; margin-top: 20px; margin-bottom: 10px; }
+                .data-table { width: 100%; border-collapse: collapse; }
+                .data-table th { background-color: #0f0f0f; color: #ffd700; font-size: 12px; padding: 10px; text-align: left; border: 1px solid #333; }
+                .data-table td { padding: 10px; border: 1px solid #ddd; font-size: 11px; }
+                
+                .income { color: #22c55e; font-weight: bold; }
+                .expense { color: #ef4444; font-weight: bold; }
+            </style>
+            </head>
+            <body>
+                <h1>${title}</h1>
+                <p class="meta-text">Generated on: ${new Date().toLocaleString()}</p>
+                
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>Total Income</th>
+                            <th>Total Expenses</th>
+                            <th>Net Savings Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="income">RS. ${totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td class="expense">RS. ${totalExpense.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td style="color: #b58900;">RS. ${netBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="ledger-title">Transaction Records</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        transactions.forEach(t => {
+            const classType = t.type === 'income' ? 'income' : 'expense';
+            htmlContent += `
+                <tr>
+                    <td style="color: #555;">${formatTimestamp(t.created_at || t.timestamp || t.date)}</td>
+                    <td class="${classType}">${t.type.toUpperCase()}</td>
+                    <td>RS. ${Number(t.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td>${t.category || "-"}</td>
+                    <td>${t.description || "-"}</td>
+                </tr>
+            `;
+        });
+
+        htmlContent += `
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `;
+
+        const blob = new Blob(['\ufeff' + htmlContent], {
+            type: 'application/msword'
+        });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title.replace(/[\s()]/g, "_")}.doc`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    window.onload = function() {
+        if(USER_ID) {
+            loadAll();
+        }
+    };
 </script>
 </body>
 </html>

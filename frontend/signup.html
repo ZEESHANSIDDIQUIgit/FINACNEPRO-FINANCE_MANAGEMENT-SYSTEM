@@ -3,174 +3,462 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinancePro - Sign Up</title>
+    <title>FinancePro | Join</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            background: #121212; 
-            color: white; 
-            font-family: Arial, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            padding: 20px;
+        :root {
+            --gold: #FFD700;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --text-main: #FFFFFF;
+            --text-dim: #B0B0B0;
         }
 
-        /* Increased max-width and padding to match Login card */
-        .login-card { 
-            width: 100%; 
-            max-width: 680px; 
-            background: #1b1b1b; 
-            padding: 75px 70px; 
-            border-radius: 28px; 
-            border: 1px solid #2a2a2a; 
-            box-shadow: 0 0 50px rgba(255, 215, 0, 0.08); 
+        body {
+            background: radial-gradient(circle at top right, #1a1f26, #000000);
+            font-family: 'Inter', -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            position: relative;
+            overflow: hidden;
         }
 
-        .logo { 
-            text-align: center; 
-            font-size: 64px; 
-            margin-bottom: 18px; 
-        }
-
-        h2 { 
-            text-align: center; 
-            margin-bottom: 12px; 
-            color: gold; 
-            font-size: 40px; 
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #999;
-            margin-bottom: 50px;
-            font-size: 18px;
-        }
-
-        .password-container { 
-            position: relative; 
-            width: 100%; 
-        }
-
-        /* Standardized input sizes */
-        input { 
-            width: 100%; 
-            padding: 22px; 
-            margin-bottom: 22px; 
-            border: none; 
-            border-radius: 14px; 
-            background: #2a2a2a; 
-            color: white; 
-            font-size: 18px; 
-            outline: none; 
-            transition: 0.3s;
-        }
-
-        input:focus { 
-            border: 1px solid gold; 
-            background: #222; 
-        }
-
-        .toggle-password {
+        body::after {
+            content: "";
             position: absolute;
-            right: 20px;
-            top: 25px;
-            cursor: pointer;
-            color: gold;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                linear-gradient(45deg, rgba(255,215,0,0.03) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255,215,0,0.03) 25%, transparent 25%);
+            background-size: 60px 60px;
+            z-index: 0;
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 360px;
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(20px);
+            padding: 32px 28px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+        }
+
+        .logo { font-size: 38px; text-align: center; margin-bottom: 10px; }
+        h2 { text-align: center; color: white; font-size: 22px; margin-bottom: 6px; font-weight: 600; }
+        .subtitle { text-align: center; color: var(--text-dim); margin-bottom: 22px; font-size: 13px; }
+
+        .input-group { position: relative; margin-bottom: 10px; }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--input-bg);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
             font-size: 14px;
-            font-weight: bold;
-            user-select: none;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        input:focus { border-color: var(--gold); background: rgba(255, 255, 255, 0.1); }
+        input.valid   { border-color: #22c55e !important; }
+        input.invalid { border-color: #ef4444 !important; }
+
+        .field-msg {
+            font-size: 11px;
+            margin-top: 5px;
+            padding-left: 4px;
+            min-height: 16px;
+            transition: all 0.2s ease;
+        }
+        .field-msg.ok  { color: #22c55e; }
+        .field-msg.err { color: #ef4444; }
+        .field-msg.checking { color: #facc15; }
+
+        /* Email validation spinner */
+        .input-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            pointer-events: none;
+            transition: opacity 0.2s;
         }
 
-        button { 
-            width: 100%; 
-            padding: 22px; 
-            border: none; 
-            border-radius: 14px; 
-            background: gold; 
-            color: black; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 20px; 
-            transition: 0.3s; 
-            margin-top: 8px;
+        .spinner {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.15);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: none;
+        }
+        @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+        .toggle-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #888;
+            transition: color 0.2s;
+            background: none;
+            border: none;
+            padding: 0;
+            width: auto;
+        }
+        .toggle-btn:hover { color: var(--gold); background: none; }
+
+        /* Password strength */
+        .strength-container { margin-bottom: 12px; }
+        .meter-grid { display: flex; gap: 6px; margin-bottom: 6px; }
+        .meter-bar {
+            flex: 1;
+            height: 5px;
+            background: #2a2a2a;
+            border-radius: 3px;
+            transition: background 0.4s ease;
+        }
+        .strength-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .strength-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .strength-hint {
+            font-size: 10px;
+            color: #555;
         }
 
-        button:hover { background: #d4af37; }
+        /* Requirements checklist */
+        .req-list {
+            options: none;
+            list-style: none;
+            padding: 0;
+            margin: 0 0 14px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 10px;
+        }
+        .req-list li {
+            font-size: 11px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.3s;
+        }
+        .req-list li.met { color: #22c55e; }
+        .req-list li .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #333;
+            flex-shrink: 0;
+            transition: background 0.3s;
+        }
+        .req-list li.met .dot { background: #22c55e; }
 
-        .link { 
-            text-align: center; 
-            margin-top: 25px; 
-            color: #999; 
-            font-size: 16px; 
+        button.submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--gold);
+            border: none;
+            border-radius: 12px;
+            color: black;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s, background 0.2s;
+            position: relative;
+        }
+        button.submit-btn:hover:not(:disabled) { opacity: 0.9; }
+        button.submit-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
-        .link a { 
-            color: gold; 
-            text-decoration: none; 
-            font-weight: bold;
-        }
+        .footer-link { text-align: center; margin-top: 25px; color: var(--text-dim); font-size: 14px; }
+        .footer-link a { color: var(--gold); text-decoration: none; font-weight: 600; }
 
-        .link a:hover { text-decoration: underline; }
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            max-width: 300px;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { border-color: #22c55e; }
+        .toast.error   { border-color: #ef4444; }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <div class="logo">💰</div>
-        <h2>Create Account</h2>
-        <p class="subtitle">Join FinancePro to start tracking</p>
-        
-        <input type="text" id="username" placeholder="Choose Username" autocomplete="off">
-        <input type="email" id="email" placeholder="Enter Email" autocomplete="off">
-        
-        <div class="password-container">
-            <input type="password" id="password" placeholder="Create Password" autocomplete="new-password">
-            <span class="toggle-password" onclick="togglePassword('password', this)">SHOW</span>
-        </div>
 
-        <button onclick="signup()">Sign Up</button>
-        <div class="link">Already have an account? <a href="login.html">Login</a></div>
+<div class="card">
+    <div class="logo">💰</div>
+    <h2>Create Account</h2>
+    <p class="subtitle">Enter your details to get started</p>
+
+    <div class="input-group">
+        <input type="text" id="username" placeholder="Username">
+        <span class="input-icon" id="username-icon"></span>
+    </div>
+    <div class="field-msg" id="username-msg"></div>
+
+    <div class="input-group">
+        <input type="email" id="email" placeholder="Email address">
+        <div class="spinner" id="email-spinner"></div>
+        <span class="input-icon" id="email-icon"></span>
+    </div>
+    <div class="field-msg" id="email-msg"></div>
+
+    <div class="input-group">
+        <input type="password" id="password" placeholder="Password" style="padding-right: 44px;">
+        <button class="toggle-btn" id="toggleIcon" type="button" aria-label="Toggle password visibility">
+            <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        </button>
     </div>
 
-    <script>
-        function togglePassword(inputId, element) {
-            const passwordInput = document.getElementById(inputId);
-            if (passwordInput.type === "password") {
-                passwordInput.type = "text";
-                element.textContent = "HIDE";
-            } else {
-                passwordInput.type = "password";
-                element.textContent = "SHOW";
-            }
+    <div class="strength-container">
+        <div class="meter-grid">
+            <div class="meter-bar" id="b1"></div>
+            <div class="meter-bar" id="b2"></div>
+            <div class="meter-bar" id="b3"></div>
+            <div class="meter-bar" id="b4"></div>
+        </div>
+        <div class="strength-row">
+            <div class="strength-label" id="str-text">Password strength</div>
+            <div class="strength-hint" id="str-hint"></div>
+        </div>
+    </div>
+
+    <ul class="req-list" id="req-list">
+        <li id="req-len"><span class="dot"></span> 8+ characters</li>
+        <li id="req-upper"><span class="dot"></span> Uppercase letter</li>
+        <li id="req-num"><span class="dot"></span> Number</li>
+        <li id="req-special"><span class="dot"></span> Special character</li>
+    </ul>
+
+    <button class="submit-btn" id="signup-btn" disabled>Create Account</button>
+
+    <div class="footer-link">
+        Already have an account? <a href="LOGIN.HTML">Login</a>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API_URL = "http://localhost:3002";
+
+    /* ── DOM Element Captures ── */
+    const usernameInput = document.getElementById("username");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const signupBtn = document.getElementById("signup-btn");
+    
+    const usernameMsg = document.getElementById("username-msg");
+    const emailMsg = document.getElementById("email-msg");
+    const passwordMsg = document.getElementById("str-text");
+    
+    const usernameIcon = document.getElementById("username-icon");
+    const emailIcon = document.getElementById("email-icon");
+    const emailSpinner = document.getElementById("email-spinner");
+
+    let emailTimer = null;
+    let emailValid = false;
+    let passwordStrong = false;
+    let usernameValid = false;
+
+    /* ── Helper: UI state engine ── */
+    function setFieldState(input, icon, msgEl, state, msg) {
+        input.className = state === "ok" ? "valid" : state === "err" ? "invalid" : "";
+        icon.textContent = state === "ok" ? "✅" : state === "err" ? "❌" : "";
+        msgEl.textContent = msg;
+        msgEl.className = `field-msg ${state === "ok" ? "ok" : state === "err" ? "err" : "checking"}`;
+    }
+
+    /* ── Username Validation Listener ── */
+    usernameInput.addEventListener("input", () => {
+        const val = usernameInput.value.trim();
+        if (val.length === 0) {
+            setFieldState(usernameInput, usernameIcon, usernameMsg, "", "");
+            usernameValid = false;
+        } else if (val.length < 3) {
+            setFieldState(usernameInput, usernameIcon, usernameMsg, "err", "At least 3 characters required");
+            usernameValid = false;
+        } else if (!/^[a-zA-Z0-9_]+$/.test(val)) {
+            setFieldState(usernameInput, usernameIcon, usernameMsg, "err", "Only letters, numbers and underscore allowed");
+            usernameValid = false;
+        } else {
+            setFieldState(usernameInput, usernameIcon, usernameMsg, "ok", "Looks good!");
+            usernameValid = true;
+        }
+        checkFormReady();
+    });
+
+    /* ── Format-Based Email Verification ── */
+    emailInput.addEventListener("input", () => {
+        emailValid = false;
+        clearTimeout(emailTimer);
+        const val = emailInput.value.trim();
+
+        if (!val) {
+            setFieldState(emailInput, emailIcon, emailMsg, "", "");
+            checkFormReady();
+            return;
         }
 
-        async function signup() {
-            const username = document.getElementById("username").value;
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-
-            if (!username || !email || !password) return alert("Please fill all fields");
-
-            try {
-                const response = await fetch("http://localhost:3001/api/signup", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username, email, password })
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    alert("Account created successfully!");
-                    window.location.href = "login.html";
-                } else {
-                    alert(data.message || "Error during signup");
-                }
-            } catch (error) {
-                alert("Cannot connect to server.");
-            }
+        const fmt = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!fmt.test(val)) {
+            setFieldState(emailInput, emailIcon, emailMsg, "err", "Enter a valid email format");
+            checkFormReady();
+            return;
         }
-    </script>
+
+        emailMsg.textContent = "Verifying email configuration...";
+        emailMsg.className = "field-msg checking";
+        emailSpinner.style.display = "block";
+        emailIcon.textContent = "";
+
+        emailTimer = setTimeout(() => {
+            emailSpinner.style.display = "none";
+            emailValid = true;
+            setFieldState(emailInput, emailIcon, emailMsg, "ok", "Email format looks valid ✓");
+            checkFormReady();
+        }, 500);
+    });
+
+    /* ── Password Strength Rules ── */
+    passwordInput.addEventListener("input", () => {
+        const val = passwordInput.value;
+        const bars = ["b1","b2","b3","b4"].map(id => document.getElementById(id));
+
+        const checks = {
+            len:     val.length >= 8,
+            upper:   /[A-Z]/.test(val),
+            num:     /[0-9]/.test(val),
+            special: /[^A-Za-z0-9]/.test(val)
+        };
+
+        // Checklist states
+        Object.entries(checks).forEach(([key, met]) => {
+            const li = document.getElementById(`req-${key}`);
+            if (met) li.classList.add("met"); else li.classList.remove("met");
+        });
+
+        const score = Object.values(checks).filter(Boolean).length;
+
+        const config = [
+            { color: "#333",    label: "Password strength", hint: "" },
+            { color: "#ef4444", label: "Weak",    hint: "Add more characters" },
+            { color: "#ef4444", label: "Weak",    hint: "Add uppercase & numbers" },
+            { color: "#facc15", label: "Medium",  hint: "Add a special character" },
+            { color: "#22c55e", label: "Strong",  hint: "Great password! ✓" }
+        ][score];
+
+        bars.forEach((b, i) => {
+            b.style.backgroundColor = i < score ? config.color : "#2a2a2a";
+        });
+
+        document.getElementById("str-text").textContent = config.label;
+        document.getElementById("str-hint").textContent  = config.hint;
+        document.getElementById("str-text").style.color  = score === 0 ? "var(--text-dim)" : config.color;
+
+        passwordStrong = score === 4; 
+        checkFormReady();
+    });
+
+    function checkFormReady() {
+        signupBtn.disabled = !(usernameValid && emailValid && passwordStrong);
+    }
+
+    /* ── Express Server Native Registration Trigger ── */
+    signupBtn.addEventListener("click", async () => {
+        const username = usernameInput.value.trim();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        signupBtn.disabled = true;
+        signupBtn.textContent = "Creating account...";
+
+        try {
+            // Replaced Firebase logic with fetch target to the Express app port route
+            const response = await fetch(`${API_URL}/api/auth/signup`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to create database account record.");
+            }
+            
+            showToast("Account created successfully!", "success");
+            
+            // Redirect smoothly back to your login portal
+            setTimeout(() => window.location.href = "LOGIN.HTML", 1500);
+
+        } catch (error) {
+            console.error("Local backend system registration exception:", error.message);
+            signupBtn.disabled = false;
+            signupBtn.textContent = "Create Account";
+            showToast(error.message || "Could not reach Express server. Make sure server.js is running.", "error");
+        }
+    });
+
+    /* ── Show/Hide Password Toggle UI utility ── */
+    document.getElementById("toggleIcon").addEventListener("click", () => {
+        const icon = document.getElementById("eye-icon");
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            icon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+        } else {
+            passwordInput.type = "password";
+            icon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+        }
+    });
+
+    function showToast(msg, type = "success") {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = `toast ${type} show`;
+        setTimeout(() => t.className = "toast", 3500);
+    }
+</script>
 </body>
 </html>
