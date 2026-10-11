@@ -96,28 +96,31 @@
 <script>
     const API_URL = "http://localhost:3002";
     
-    // Extract the email parameter from the URL bar
+    // The one-time token comes from the link in the reset email
     const urlParams = new URLSearchParams(window.location.search);
-    const email = urlParams.get("email");
+    const token = urlParams.get("token");
 
-    if (email) {
-        document.getElementById("target-email").textContent = `Setting new password for: ${email}`;
+    if (token) {
+        document.getElementById("target-email").textContent = "Choose a new password for your account.";
     } else {
-        document.getElementById("target-email").textContent = "Error: No email context found.";
+        document.getElementById("target-email").textContent = "This reset link is invalid. Request a new one from the login page.";
     }
 
     async function handleReset() {
         const password = document.getElementById("new-password").value;
 
-        if (!password || password.length < 4) {
-            return showToast("Password must be at least 4 characters long.", "error");
+        if (!token) {
+            return showToast("This reset link is invalid. Request a new one.", "error");
+        }
+        if (!password || password.length < 8) {
+            return showToast("Password must be at least 8 characters long.", "error");
         }
 
         try {
             const response = await fetch(`${API_URL}/api/auth/reset-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ token, password })
             });
 
             const data = await response.json();

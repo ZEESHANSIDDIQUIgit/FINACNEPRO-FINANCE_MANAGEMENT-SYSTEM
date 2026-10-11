@@ -21,7 +21,10 @@
             min-height: 100vh;
             margin: 0;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 20px 0;
+            box-sizing: border-box;
         }
 
         body::after {
@@ -199,6 +202,38 @@
         .footer-link { text-align: center; margin-top: 25px; color: var(--text-dim); font-size: 14px; }
         .footer-link a { color: var(--gold); text-decoration: none; font-weight: 600; }
 
+        /* Google button + divider */
+        #google-btn { display: flex; justify-content: center; min-height: 44px; }
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-dim);
+            font-size: 12px;
+            margin: 16px 0;
+        }
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Verification code step */
+        input.otp {
+            text-align: center;
+            letter-spacing: 10px;
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .link-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+            font-size: 12px;
+        }
+        .link-row a { color: var(--gold); text-decoration: none; font-weight: 600; }
+
         /* Toast notification */
         .toast {
             position: fixed;
@@ -220,13 +255,18 @@
         .toast.success { border-color: #22c55e; }
         .toast.error   { border-color: #ef4444; }
     </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
 <div class="card">
     <div class="logo">💰</div>
     <h2>Create Account</h2>
+    <div id="step-form">
     <p class="subtitle">Enter your details to get started</p>
+
+    <div id="google-btn"></div>
+    <div class="divider">or sign up with email</div>
 
     <div class="input-group">
         <input type="text" id="username" placeholder="Username">
@@ -272,6 +312,19 @@
     </ul>
 
     <button class="submit-btn" id="signup-btn" disabled>Create Account</button>
+    </div>
+
+    <div id="step-otp" style="display:none;">
+        <p class="subtitle" style="margin-bottom: 16px;">We sent a 6-digit code to<br><strong id="otp-email" style="color: white;"></strong></p>
+        <div class="input-group">
+            <input type="text" id="otp-code" class="otp" inputmode="numeric" maxlength="6" placeholder="••••••" autocomplete="one-time-code">
+        </div>
+        <button class="submit-btn" id="otp-btn" disabled>Verify &amp; Create Account</button>
+        <div class="link-row">
+            <a href="#" id="otp-back">← Change details</a>
+            <a href="#" id="otp-resend">Resend code</a>
+        </div>
+    </div>
 
     <div class="footer-link">
         Already have an account? <a href="LOGIN.HTML">Login</a>
@@ -282,6 +335,9 @@
 
 <script>
     const API_URL = "http://localhost:3002";
+
+    // Paste your Google OAuth "Web application" client ID here (must match GOOGLE_CLIENT_ID in your .env)
+    const GOOGLE_CLIENT_ID = "50041527229-v3irb0r51khlibh73humkhffhb5bfvb7.apps.googleusercontent.com";
 
     /* ── DOM Element Captures ── */
     const usernameInput = document.getElementById("username");
@@ -416,7 +472,7 @@
 
         try {
             // Replaced Firebase logic with fetch target to the Express app port route
-            const response = await fetch(`${API_URL}/api/auth/signup`, {
+            const response = await fetch(`${API_URL}/api/auth/signup/request-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username, email, password })
@@ -428,10 +484,14 @@
                 throw new Error(data.message || "Failed to create database account record.");
             }
             
-            showToast("Account created successfully!", "success");
+            pendingSignup = { username, email, password };
+            showToast("Verification code sent to your email.", "success");
+            showOtpStep(email);
+            signupBtn.disabled = false;
+            signupBtn.textContent = "Create Account";
             
             // Redirect smoothly back to your login portal
-            setTimeout(() => window.location.href = "LOGIN.HTML", 1500);
+            // (redirect to LOGIN.HTML now happens after the code is verified)
 
         } catch (error) {
             console.error("Local backend system registration exception:", error.message);
@@ -440,6 +500,109 @@
             showToast(error.message || "Could not reach Express server. Make sure server.js is running.", "error");
         }
     });
+
+    /* ── Step 2: email verification code ── */
+    let pendingSignup = null;
+    const stepForm = document.getElementById("step-form");
+    const stepOtp = document.getElementById("step-otp");
+    const otpInput = document.getElementById("otp-code");
+    const otpBtn = document.getElementById("otp-btn");
+
+    function showOtpStep(email) {
+        document.getElementById("otp-email").textContent = email;
+        stepForm.style.display = "none";
+        stepOtp.style.display = "block";
+        otpInput.value = "";
+        otpBtn.disabled = true;
+        otpInput.focus();
+    }
+
+    otpInput.addEventListener("input", () => {
+        otpInput.value = otpInput.value.replace(/\D/g, "").slice(0, 6);
+        otpBtn.disabled = otpInput.value.length !== 6;
+    });
+
+    otpBtn.addEventListener("click", async () => {
+        if (!pendingSignup) return;
+        otpBtn.disabled = true;
+        otpBtn.textContent = "Verifying...";
+        try {
+            const res = await fetch(`${API_URL}/api/auth/signup/verify-otp`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: pendingSignup.email, otp: otpInput.value })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Verification failed.");
+
+            showToast("Account created! A confirmation email is on its way.", "success");
+            setTimeout(() => window.location.href = "LOGIN.HTML", 1800);
+        } catch (err) {
+            otpBtn.disabled = false;
+            otpBtn.textContent = "Verify & Create Account";
+            showToast(err.message || "Could not reach the server.", "error");
+        }
+    });
+
+    document.getElementById("otp-resend").addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (!pendingSignup) return;
+        try {
+            const res = await fetch(`${API_URL}/api/auth/signup/request-otp`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(pendingSignup)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Could not resend the code.");
+            showToast("A new code was sent.", "success");
+        } catch (err) {
+            showToast(err.message || "Could not reach the server.", "error");
+        }
+    });
+
+    document.getElementById("otp-back").addEventListener("click", (e) => {
+        e.preventDefault();
+        stepOtp.style.display = "none";
+        stepForm.style.display = "block";
+    });
+
+    /* ── Continue with Google ── */
+    async function handleGoogleCredential(response) {
+        try {
+            const res = await fetch(`${API_URL}/api/auth/google`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ credential: response.credential })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Google sign-in failed.");
+
+            localStorage.setItem("currentUserId", data.userId);
+            localStorage.setItem("userName", data.name);
+            showToast(res.status === 201 ? "Account created with Google! Welcome email sent." : "Signed in with Google.", "success");
+            setTimeout(() => window.location.href = "index.html", 1200);
+        } catch (err) {
+            showToast(err.message || "Could not reach the server.", "error");
+        }
+    }
+
+    let googleInitTries = 0;
+    function initGoogleButton() {
+        const holder = document.getElementById("google-btn");
+        if (!window.google || !google.accounts) {
+            if (++googleInitTries < 20) return setTimeout(initGoogleButton, 300);
+            holder.innerHTML = '<div class="field-msg err">Google sign-in could not load. Check your internet connection.</div>';
+            return;
+        }
+        if (GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
+            holder.innerHTML = '<div class="field-msg err">Add your Google Client ID at the top of the script in signup.html</div>';
+            return;
+        }
+        google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
+        google.accounts.id.renderButton(holder, { theme: "filled_black", size: "large", text: "continue_with", width: 304 });
+    }
+    window.addEventListener("load", initGoogleButton);
 
     /* ── Show/Hide Password Toggle UI utility ── */
     document.getElementById("toggleIcon").addEventListener("click", () => {
